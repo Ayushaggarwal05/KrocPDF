@@ -16,6 +16,11 @@ enum JobStatus {
   EXPIRED
 }
 
+enum JobType {
+  IMAGE_TO_PDF
+  MERGE_PDF
+}
+
 enum PageOrientation {
   PORTRAIT
   LANDSCAPE
@@ -46,6 +51,7 @@ enum TransparencyMode {
 model ConversionJob {
   id              String          @id @default(uuid()) @db.Uuid
   status          JobStatus       @default(CREATED)
+  jobType         JobType         @default(IMAGE_TO_PDF) @map("job_type")
   failureReason   String?         @map("failure_reason")
   
   // PDF Layout Configuration

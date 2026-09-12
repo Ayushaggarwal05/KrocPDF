@@ -163,3 +163,34 @@ export async function generateLocalPdf(
   const blob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
   return URL.createObjectURL(blob);
 }
+
+export async function mergePdfsLocally(
+  files: File[],
+  onProgress: (percent: number) => void
+): Promise<string> {
+  const mergedPdf = await PDFDocument.create();
+  let progress = 10;
+  onProgress(progress);
+  
+  const step = 80 / Math.max(1, files.length);
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    
+    // Copy all pages
+    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+    copiedPages.forEach((page) => mergedPdf.addPage(page));
+    
+    progress += step;
+    onProgress(Math.round(progress));
+  }
+
+  onProgress(90);
+  const mergedPdfBytes = await mergedPdf.save();
+  onProgress(100);
+
+  const blob = new Blob([mergedPdfBytes as unknown as BlobPart], { type: 'application/pdf' });
+  return URL.createObjectURL(blob);
+}

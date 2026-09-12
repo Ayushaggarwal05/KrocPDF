@@ -1,6 +1,54 @@
-import { IsEnum, IsInt, IsOptional, IsString, IsArray, ValidateNested, Min, Max, IsIn } from 'class-validator';
+import { 
+  IsEnum, 
+  IsInt, 
+  IsOptional, 
+  IsString, 
+  IsArray, 
+  ValidateNested, 
+  Min, 
+  Max, 
+  IsIn,
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { PageSize, PageOrientation, PageMargin } from '@prisma/client';
+import { PageSize, PageOrientation, PageMargin, JobType } from '@prisma/client';
+
+export function ValidateFilesMimeType(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'validateFilesMimeType',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const dto = args.object as InitiateConversionDto;
+          const files = value as FileDto[];
+          if (!files || !Array.isArray(files)) return false;
+          
+          const jobType = dto.jobType || JobType.IMAGE_TO_PDF;
+          for (const file of files) {
+            if (jobType === JobType.IMAGE_TO_PDF) {
+              if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimeType)) return false;
+            } else if (jobType === JobType.MERGE_PDF) {
+              if (file.mimeType !== 'application/pdf') return false;
+            }
+          }
+          return true;
+        },
+        defaultMessage(args: ValidationArguments) {
+          const dto = args.object as InitiateConversionDto;
+          if (dto.jobType === JobType.MERGE_PDF) {
+            return 'All files must be application/pdf for MERGE_PDF jobs';
+          }
+          return 'All files must be valid images (jpeg, png, webp) for IMAGE_TO_PDF jobs';
+        }
+      },
+    });
+  };
+}
 
 export class ConversionSettingsDto {
   @IsEnum(PageSize)
@@ -30,7 +78,6 @@ export class FileDto {
   fileName: string;
 
   @IsString()
-  @IsIn(['image/jpeg', 'image/png', 'image/webp'])
   mimeType: string;
 
   @IsInt()
@@ -40,6 +87,10 @@ export class FileDto {
 }
 
 export class InitiateConversionDto {
+  @IsEnum(JobType)
+  @IsOptional()
+  jobType?: JobType;
+
   @ValidateNested()
   @Type(() => ConversionSettingsDto)
   @IsOptional()
@@ -48,5 +99,6 @@ export class InitiateConversionDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => FileDto)
+  @ValidateFilesMimeType()
   files: FileDto[];
 }

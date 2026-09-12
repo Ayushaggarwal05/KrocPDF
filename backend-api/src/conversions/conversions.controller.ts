@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, Sse, MessageEvent, Delete } from '@nestjs/common';
+import { Controller, Post, Param, Body, Sse, MessageEvent, Delete } from '@nestjs/common';
 import { ConversionsService } from './conversions.service';
 import { InitiateConversionDto } from './conversions.dto';
 import { Observable } from 'rxjs';

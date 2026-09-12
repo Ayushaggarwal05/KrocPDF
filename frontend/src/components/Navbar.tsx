@@ -40,10 +40,10 @@ export function Navbar() {
               />
             </div>
             <span className="text-lg font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              <span className="text-emerald-400 font-extrabold">
                 Kroc
               </span>
-              <span className="text-neutral-300">PDF</span>
+              <span className="text-slate-200">PDF</span>
             </span>
           </Link>
 
@@ -55,10 +55,10 @@ export function Navbar() {
                 href={`/${tool.slug}`}
                 aria-current={pathname === `/${tool.slug}` ? 'page' : undefined}
                 className={clsx(
-                  "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
+                  "px-3 py-1.5 text-sm font-medium rounded-lg transition-all",
                   pathname === `/${tool.slug}`
-                    ? "bg-white/10 text-white"
-                    : "text-neutral-300 hover:text-white hover:bg-white/5"
+                    ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/25"
+                    : "text-slate-300 hover:text-white hover:bg-white/[0.04]"
                 )}
               >
                 {tool.name}
@@ -70,10 +70,10 @@ export function Navbar() {
               <span
                 key={tool.slug}
                 title={`${tool.name} (Coming Soon)`}
-                className="px-2.5 py-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-400 select-none flex items-center space-x-1.5 cursor-not-allowed transition-colors"
+                className="px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-400 select-none flex items-center space-x-1.5 cursor-not-allowed transition-colors"
               >
                 <span>{tool.name}</span>
-                <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-neutral-400">
+                <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/[0.08] border border-emerald-500/15 text-emerald-400/80">
                   Soon
                 </span>
               </span>
@@ -86,13 +86,13 @@ export function Navbar() {
               href="https://github.com/alokprashar864/jpg_to_pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+              className="p-2 text-slate-400 hover:text-emerald-400 transition-colors rounded-lg hover:bg-white/5"
               aria-label="View on GitHub"
             >
               <GithubIcon className="w-5 h-5" />
             </a>
             <button
-              className="px-3 py-1.5 text-sm text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+              className="px-3 py-1.5 text-sm text-slate-300 hover:text-white transition-colors rounded-lg hover:bg-white/5"
               aria-label="Log in (coming soon)"
               title="Coming soon"
             >
@@ -100,7 +100,7 @@ export function Navbar() {
               Log in
             </button>
             <button
-              className="px-3 py-1.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-500 hover:to-purple-500 transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
+              className="px-3.5 py-1.5 text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-950/40"
               aria-label="Sign up (coming soon)"
               title="Coming soon"
             >
@@ -112,7 +112,7 @@ export function Navbar() {
           {/* Mobile Hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+            className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
           >
@@ -123,11 +123,11 @@ export function Navbar() {
 
       {/* Mobile Drawer */}
       <div
-        className={clsx("mobile-menu-enter lg:hidden border-t border-white/5 max-h-[85vh] overflow-y-auto", mobileOpen && "open")}
+        className={clsx("mobile-menu-enter lg:hidden border-t border-white/5 max-h-[85vh] overflow-y-auto bg-neutral-950/95", mobileOpen && "open")}
         role="menu"
       >
         <div className="px-4 py-4 space-y-1">
-          <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 px-3 py-1">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 px-3 py-1">
             Active Tools
           </div>
           {activeTools.map((tool) => (
@@ -139,25 +139,25 @@ export function Navbar() {
               className={clsx(
                 "block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 pathname === `/${tool.slug}`
-                  ? "bg-white/10 text-white"
-                  : "text-neutral-300 hover:text-white hover:bg-white/5"
+                  ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-white/5"
               )}
             >
               {tool.name}
             </Link>
           ))}
 
-          <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 px-3 pt-3 pb-1">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 px-3 pt-3 pb-1">
             Coming Soon
           </div>
           {comingSoonTools.map((tool) => (
             <div
               key={tool.slug}
               role="menuitem"
-              className="flex items-center justify-between px-4 py-2.5 rounded-lg text-sm text-neutral-500 cursor-not-allowed select-none"
+              className="flex items-center justify-between px-4 py-2.5 rounded-lg text-sm text-slate-500 cursor-not-allowed select-none"
             >
               <span>{tool.name}</span>
-              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-neutral-400">
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/[0.08] border border-emerald-500/15 text-emerald-400/80">
                 Soon
               </span>
             </div>
@@ -170,7 +170,7 @@ export function Navbar() {
             target="_blank"
             rel="noopener noreferrer"
             role="menuitem"
-            className="flex items-center px-4 py-3 rounded-lg text-sm text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="flex items-center px-4 py-3 rounded-lg text-sm text-slate-400 hover:text-emerald-400 hover:bg-white/5 transition-colors"
           >
             <GithubIcon className="w-4 h-4 mr-3" />
             GitHub
@@ -178,13 +178,13 @@ export function Navbar() {
 
           <div className="flex space-x-2 px-4 pt-2">
             <button
-              className="flex-1 py-2.5 text-sm text-neutral-300 border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
+              className="flex-1 py-2.5 text-sm text-slate-300 border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
               title="Coming soon"
             >
               Log in
             </button>
             <button
-              className="flex-1 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-500 hover:to-purple-500 transition-all"
+              className="flex-1 py-2.5 text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-950/40"
               title="Coming soon"
             >
               Sign up

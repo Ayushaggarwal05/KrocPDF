@@ -1,19 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --accent-green: #22c55e;
-  --surface: #141414;
-  --surface-elevated: #1a1a1a;
-  --border: #262626;
-  --border-hover: #404040;
-  --text-muted: #737373;
-  --text-secondary: #a3a3a3;
-  --glass-bg: rgba(20, 20, 20, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  --background: #070a0d;
+  --foreground: #f1f5f9;
+  --accent-emerald: #10b981;
+  --accent-mint: #34d399;
+  --accent-teal: #14b8a6;
+  --accent-cyan: #06b6d4;
+  --surface: #0d1218;
+  --surface-elevated: #131b24;
+  --border: #1b2636;
+  --border-hover: #27374d;
+  --text-muted: #64748b;
+  --text-secondary: #94a3b8;
+  --glass-bg: rgba(13, 18, 24, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.07);
 }
 
 @theme inline {
@@ -30,7 +31,7 @@ body {
 }
 
 /* ========================================
-   Animated Gradient Mesh Background
+   Obsidian & Emerald Mesh Background
    ======================================== */
 
 @keyframes gradientShift {
@@ -40,12 +41,12 @@ body {
 }
 
 .gradient-mesh {
-  background: radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 80%, rgba(34, 197, 94, 0.04) 0%, transparent 50%),
+  background: radial-gradient(ellipse at 20% 40%, rgba(16, 185, 129, 0.07) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(20, 184, 166, 0.05) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 85%, rgba(6, 182, 212, 0.03) 0%, transparent 50%),
               var(--background);
   background-size: 200% 200%;
-  animation: gradientShift 15s ease infinite;
+  animation: gradientShift 18s ease infinite;
 }
 
 /* ========================================
@@ -54,13 +55,13 @@ body {
 
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(120%);
-  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
   border: 1px solid var(--glass-border);
 }
 
 /* ========================================
-   Card Hover Glow Effects
+   Card Hover Glow Effects (Obsidian & Emerald)
    ======================================== */
 
 .card-glow {
@@ -73,11 +74,11 @@ body {
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(20, 184, 166, 0.15));
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: -1;
-  filter: blur(12px);
+  filter: blur(10px);
 }
 
 .card-glow:hover::before {
@@ -86,31 +87,53 @@ body {
 
 .card-glow:hover {
   transform: translateY(-4px);
-  border-color: var(--border-hover);
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1), 0 2px 8px rgba(0, 0, 0, 0.3);
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.08), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Coming Soon cards: muted glow */
 .card-glow-muted {
   position: relative;
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: default;
 }
 
 .card-glow-muted:hover {
-  opacity: 0.65;
-  border-color: var(--border-hover);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 /* ========================================
-   Entrance Animations
+   Animations
    ======================================== */
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -118,10 +141,14 @@ body {
   }
 }
 
+.fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -129,52 +156,18 @@ body {
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
 }
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out both;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.4s ease-out both;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out both;
-}
-
-/* Staggered children */
-.stagger-children > * {
-  animation: fadeInUp 0.5s ease-out both;
-}
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
 
 /* ========================================
-   Accessibility — Focus Visible
+   Accessibility: Focus-Visible Rings
    ======================================== */
 
-:focus-visible {
-  outline: 2px solid var(--accent-blue);
+*:focus-visible {
+  outline: 2px solid var(--accent-emerald);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-/* Cards and buttons get a ring instead */
-button:focus-visible,
-a:focus-visible,
-[role="link"]:focus-visible,
-[role="button"]:focus-visible {
-  outline: 2px solid var(--accent-blue);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
 /* ========================================
@@ -185,69 +178,48 @@ a:focus-visible,
   position: relative;
 }
 
-.tooltip-content {
-  position: absolute;
-  bottom: calc(100% + 12px);
-  left: 50%;
-  transform: translateX(-50%) scale(0.95);
+.tooltip-container .tooltip-text {
+  visibility: hidden;
   opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 50;
-  min-width: 260px;
-}
-
-.tooltip-container:hover .tooltip-content,
-.tooltip-container:focus-within .tooltip-content {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
-  pointer-events: auto;
-}
-
-/* Tooltip arrow */
-.tooltip-content::after {
-  content: "";
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: var(--surface-elevated);
+  transform: translateX(-50%) translateY(-4px);
+  background: var(--surface-elevated);
+  color: var(--foreground);
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: normal;
+  max-width: 220px;
+  width: max-content;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-8px);
 }
 
 /* ========================================
-   Mobile Menu Transition
+   Mobile Menu Slide-Down
    ======================================== */
 
 .mobile-menu-enter {
   max-height: 0;
-  opacity: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  opacity: 0;
 }
 
 .mobile-menu-enter.open {
-  max-height: 400px;
+  max-height: 480px;
   opacity: 1;
-}
-
-/* ========================================
-   Scrollbar Styling
-   ======================================== */
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-hover);
 }

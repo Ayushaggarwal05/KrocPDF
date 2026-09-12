@@ -4,9 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useConversion } from '@/hooks/useConversion';
 import { uploadFileToS3 } from '@/lib/uploader';
-import { generateLocalPdf } from '@/lib/localConverter';
+import { generateLocalPdf, mergePdfsLocally } from '@/lib/localConverter';
 import { API_BASE_URL } from '@/lib/api';
 import { validateImageHeader } from '@/lib/sanitizer';
+import { validatePdfBinary } from '@/lib/binaryValidator';
 import { PrivacyTimer } from '@/components/PrivacyTimer';
 import { UploadCloud, GripVertical, X, FileImage, Settings, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
@@ -17,7 +18,7 @@ interface ImageFile {
   previewUrl: string;
 }
 
-export function ConverterWidget() {
+export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [settings, setSettings] = useState({ pageSize: 'A4', orientation: 'PORTRAIT', margins: 'NONE', dpi: 150, engine: 'cloud', transparencyMode: 'flatten_white' });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -38,17 +39,28 @@ export function ConverterWidget() {
     e.preventDefault();
     if (status !== 'IDLE' && status !== 'ERROR') return;
 
-    const droppedFiles = Array.from(e.dataTransfer.files).filter(f =>
-      f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp'
-    );
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(f => {
+      if (tool === 'merge-pdf') return f.type === 'application/pdf';
+      if (tool !== 'unified') return f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp';
+      return f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp' || f.type === 'application/pdf';
+    });
 
     const validFiles: File[] = [];
     for (const f of droppedFiles) {
-      if (await validateImageHeader(f)) {
-        validFiles.push(f);
+      if (f.type === 'application/pdf') {
+        if (await validatePdfBinary(f)) {
+          validFiles.push(f);
+        } else {
+          setStatus('ERROR');
+          setMessage(`Invalid or corrupt PDF: ${f.name}`);
+        }
       } else {
-        setStatus('ERROR');
-        setMessage(`Invalid or corrupt image: ${f.name}`);
+        if (await validateImageHeader(f)) {
+          validFiles.push(f);
+        } else {
+          setStatus('ERROR');
+          setMessage(`Invalid or corrupt image: ${f.name}`);
+        }
       }
     }
 
@@ -61,14 +73,18 @@ export function ConverterWidget() {
     setImages(prev => {
       const nextImages = [...prev, ...newImages];
       const totalBytes = nextImages.reduce((sum, img) => sum + img.file.size, 0);
-      if (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024) {
+      const hasPdf = nextImages.some(img => img.file.type === 'application/pdf');
+      
+      const isMassive = hasPdf ? (nextImages.length > 15 || totalBytes > 25 * 1024 * 1024) : (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024);
+
+      if (isMassive) {
         setSettings(s => ({ ...s, engine: 'cloud' }));
         setToastMsg('Payload too large for local processing. Falling back to Cloud Batch Mode.');
         setTimeout(() => setToastMsg(null), 5000);
       }
       return nextImages;
     });
-  }, [status, setStatus, setMessage]);
+  }, [status, setStatus, setMessage, tool]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -98,11 +114,20 @@ export function ConverterWidget() {
       if (settings.engine === 'local') {
         setMessage('Generating PDF locally in your browser...');
         try {
-          const url = await generateLocalPdf(
-            images.map(img => img.file),
-            settings,
-            (percent) => setProgress(percent)
-          );
+          const hasPdf = images.some(img => img.file.type === 'application/pdf');
+          let url;
+          if (hasPdf) {
+            url = await mergePdfsLocally(
+              images.map(img => img.file),
+              (percent) => setProgress(percent)
+            );
+          } else {
+            url = await generateLocalPdf(
+              images.map(img => img.file),
+              settings,
+              (percent) => setProgress(percent)
+            );
+          }
           setMessage('Local conversion complete!');
           setDownloadUrl(url); // Set download directly, skipping SSE
           setStatus('READY');
@@ -120,8 +145,11 @@ export function ConverterWidget() {
       }
 
       setMessage('Requesting upload URLs...');
+      const hasPdf = images.some(img => img.file.type === 'application/pdf');
+      const jobType = hasPdf ? 'MERGE_PDF' : 'IMAGE_TO_PDF';
 
       const payload = {
+        jobType,
         settings,
         files: images.map(img => ({
           fileName: img.file.name,
@@ -248,29 +276,42 @@ export function ConverterWidget() {
             <div
               onDragOver={onDragOver}
               onDrop={onDrop}
-              className="md:col-span-2 border-2 border-dashed border-neutral-800 hover:border-blue-500/50 bg-neutral-900/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer min-h-[300px]"
+              className="md:col-span-2 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-900/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer min-h-[300px]"
             >
-              <UploadCloud className="w-12 h-12 text-neutral-500 mb-4" />
-              <h3 className="text-xl font-medium mb-2">Drag & Drop images here</h3>
-              <p className="text-neutral-500 mb-6">Supports .JPG, .JPEG, .PNG up to 50 Megapixels</p>
+              <UploadCloud className="w-12 h-12 text-slate-500 mb-4" />
+              <h3 className="text-xl font-medium mb-2 text-slate-100">
+                {tool === 'merge-pdf' ? 'Drag & Drop PDFs here' : 'Drag & Drop images here'}
+              </h3>
+              <p className="text-slate-400 mb-6">
+                {tool === 'merge-pdf' ? 'Supports .PDF files' : 'Supports .JPG, .JPEG, .PNG up to 50 Megapixels'}
+              </p>
 
-              <label className="px-6 py-3 bg-white text-black font-medium rounded-lg hover:bg-neutral-200 transition cursor-pointer shadow-xl shadow-white/5">
+              <label className="px-6 py-3 bg-slate-100 text-slate-950 font-semibold rounded-lg hover:bg-emerald-400 hover:text-slate-950 transition-all cursor-pointer shadow-xl shadow-black/30">
                 Browse Files
                 <input
                   type="file"
                   multiple
-                  accept="image/jpeg, image/png"
+                  accept={tool === 'merge-pdf' ? 'application/pdf' : (tool === 'unified' ? 'image/jpeg, image/png, application/pdf' : 'image/jpeg, image/png')}
                   className="hidden"
                   onChange={async (e) => {
                     if (!e.target.files) return;
                     const selectedFiles = Array.from(e.target.files);
                     const validFiles: File[] = [];
                     for (const f of selectedFiles) {
-                      if (await validateImageHeader(f)) {
-                        validFiles.push(f);
+                      if (f.type === 'application/pdf') {
+                        if (await validatePdfBinary(f)) {
+                          validFiles.push(f);
+                        } else {
+                          setStatus('ERROR');
+                          setMessage(`Invalid or corrupt PDF: ${f.name}`);
+                        }
                       } else {
-                        setStatus('ERROR');
-                        setMessage(`Invalid or corrupt image: ${f.name}`);
+                        if (await validateImageHeader(f)) {
+                          validFiles.push(f);
+                        } else {
+                          setStatus('ERROR');
+                          setMessage(`Invalid or corrupt image: ${f.name}`);
+                        }
                       }
                     }
                     const newImages = validFiles.map(file => ({
@@ -281,7 +322,10 @@ export function ConverterWidget() {
                     setImages(prev => {
                       const nextImages = [...prev, ...newImages];
                       const totalBytes = nextImages.reduce((sum, img) => sum + img.file.size, 0);
-                      if (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024) {
+                      const hasPdf = nextImages.some(img => img.file.type === 'application/pdf');
+                      const isMassive = hasPdf ? (nextImages.length > 15 || totalBytes > 25 * 1024 * 1024) : (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024);
+
+                      if (isMassive) {
                         setSettings(s => ({ ...s, engine: 'cloud' }));
                         setToastMsg('Payload too large for local processing. Falling back to Cloud Batch Mode.');
                         setTimeout(() => setToastMsg(null), 5000);
@@ -294,23 +338,23 @@ export function ConverterWidget() {
             </div>
 
             {/* Right: Settings */}
-            <div className="bg-neutral-900/50 border border-neutral-800 p-6 rounded-2xl flex flex-col justify-between">
+            <div className="bg-slate-900/40 border border-slate-800/80 p-6 rounded-2xl flex flex-col justify-between">
               <div>
-                <div className="flex items-center space-x-2 text-neutral-300 mb-6">
-                  <Settings className="w-5 h-5" />
-                  <h3 className="font-medium">Document Settings</h3>
+                <div className="flex items-center space-x-2 text-slate-200 mb-6">
+                  <Settings className="w-5 h-5 text-emerald-400" />
+                  <h3 className="font-semibold">Document Settings</h3>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-neutral-400">Processing Engine</label>
-                    <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg p-1">
+                    <label className="block text-xs font-medium text-slate-400">Processing Engine</label>
+                    <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
                       <button
                         type="button"
                         onClick={() => setSettings({ ...settings, engine: 'cloud' })}
                         className={clsx(
                           "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
-                          settings.engine === 'cloud' ? "bg-blue-600 text-white shadow-sm" : "text-neutral-400 hover:text-white"
+                          settings.engine === 'cloud' ? "bg-emerald-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                         )}
                       >
                         Force Cloud
@@ -321,7 +365,7 @@ export function ConverterWidget() {
                         disabled={images.length > 20 || images.reduce((sum, img) => sum + img.file.size, 0) > 50 * 1024 * 1024}
                         className={clsx(
                           "flex-1 py-1.5 text-xs font-medium rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed",
-                          settings.engine === 'local' ? "bg-purple-600 text-white shadow-sm" : "text-neutral-400 hover:text-white"
+                          settings.engine === 'local' ? "bg-teal-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                         )}
                       >
                         Force Local
@@ -329,12 +373,12 @@ export function ConverterWidget() {
                     </div>
                   </div>
 
-                  <label className="block text-sm text-neutral-400">
+                  <label className="block text-sm text-slate-400">
                     Page Size
                     <select
                       value={settings.pageSize}
                       onChange={(e) => setSettings({ ...settings, pageSize: e.target.value })}
-                      className="mt-1 block w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                      className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
                     >
                       <option value="A4">A4</option>
                       <option value="LETTER">Letter</option>
@@ -342,12 +386,12 @@ export function ConverterWidget() {
                     </select>
                   </label>
 
-                  <label className="block text-sm text-neutral-400">
+                  <label className="block text-sm text-slate-400">
                     Orientation
                     <select
                       value={settings.orientation}
                       onChange={(e) => setSettings({ ...settings, orientation: e.target.value })}
-                      className="mt-1 block w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                      className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
                     >
                       <option value="PORTRAIT">Portrait</option>
                       <option value="LANDSCAPE">Landscape</option>
@@ -355,12 +399,12 @@ export function ConverterWidget() {
                     </select>
                   </label>
 
-                  <label className="block text-sm text-neutral-400">
+                  <label className="block text-sm text-slate-400">
                     Margins
                     <select
                       value={settings.margins}
                       onChange={(e) => setSettings({ ...settings, margins: e.target.value })}
-                      className="mt-1 block w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                      className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
                     >
                       <option value="NONE">None</option>
                       <option value="SMALL">Small</option>
@@ -370,13 +414,13 @@ export function ConverterWidget() {
                   </label>
 
                   <div className="space-y-2">
-                    <p className="text-sm text-neutral-400">Transparency Mode</p>
-                    <div className="flex bg-neutral-900 rounded-lg p-1">
+                    <p className="text-sm text-slate-400">Transparency Mode</p>
+                    <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
                       <button
                         onClick={() => setSettings({ ...settings, transparencyMode: 'flatten_white' })}
                         className={clsx(
                           "flex-1 py-1.5 text-xs font-medium rounded-md transition",
-                          settings.transparencyMode === 'flatten_white' ? "bg-neutral-200 text-black shadow-md" : "text-neutral-400 hover:text-white"
+                          settings.transparencyMode === 'flatten_white' ? "bg-slate-200 text-slate-950 shadow-md font-semibold" : "text-slate-400 hover:text-white"
                         )}
                       >
                         White
@@ -385,7 +429,7 @@ export function ConverterWidget() {
                         onClick={() => setSettings({ ...settings, transparencyMode: 'flatten_black' })}
                         className={clsx(
                           "flex-1 py-1.5 text-xs font-medium rounded-md transition",
-                          settings.transparencyMode === 'flatten_black' ? "bg-neutral-800 text-white shadow-md border border-neutral-700" : "text-neutral-400 hover:text-white"
+                          settings.transparencyMode === 'flatten_black' ? "bg-slate-800 text-white shadow-md border border-slate-700 font-semibold" : "text-slate-400 hover:text-white"
                         )}
                       >
                         Black
@@ -394,7 +438,7 @@ export function ConverterWidget() {
                         onClick={() => setSettings({ ...settings, transparencyMode: 'keep_transparent' })}
                         className={clsx(
                           "flex-1 py-1.5 text-xs font-medium rounded-md transition",
-                          settings.transparencyMode === 'keep_transparent' ? "bg-blue-600 text-white shadow-md" : "text-neutral-400 hover:text-white"
+                          settings.transparencyMode === 'keep_transparent' ? "bg-emerald-600 text-white shadow-md font-semibold" : "text-slate-400 hover:text-white"
                         )}
                       >
                         Preserve
@@ -407,7 +451,7 @@ export function ConverterWidget() {
               <button
                 onClick={startConversion}
                 disabled={images.length === 0}
-                className="w-full mt-8 py-3 bg-blue-600 disabled:bg-neutral-800 disabled:text-neutral-500 hover:bg-blue-500 text-white font-medium rounded-lg transition"
+                className="w-full mt-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold rounded-lg transition-all shadow-lg shadow-emerald-950/40"
               >
                 Convert to PDF
               </button>
@@ -418,8 +462,8 @@ export function ConverterWidget() {
         {/* Sortable Grid */}
         {(status === 'IDLE' || status === 'ERROR') && images.length > 0 && (
           <div className="pt-8">
-            <h3 className="text-xl font-medium mb-4 flex items-center">
-              <FileImage className="w-5 h-5 mr-2 text-blue-400" />
+            <h3 className="text-xl font-medium mb-4 flex items-center text-slate-100">
+              <FileImage className="w-5 h-5 mr-2 text-emerald-400" />
               Reorder Pages
             </h3>
             <DragDropContext onDragEnd={handleDragEnd}>

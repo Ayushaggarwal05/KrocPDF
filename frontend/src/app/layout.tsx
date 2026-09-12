@@ -17,7 +17,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "KrocPDF — Every Document Tool You Need",
   description: "Privacy-first document conversion platform. Convert JPG, PNG, JPEG images to PDF instantly. 100% secure, local in-browser conversion or fast cloud processing. Free, open source, no watermarks.",
-  metadataBase: new URL('https://your-domain.com'),
+  metadataBase: new URL('https://krocpdf.app'),
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

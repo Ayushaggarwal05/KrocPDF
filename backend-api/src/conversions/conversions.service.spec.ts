@@ -4,7 +4,6 @@ import { ConversionsService } from './conversions.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { RedisService } from '../redis/redis.service';
-import { PageSize, PageOrientation } from '@prisma/client';
 
 describe('ConversionsService', () => {
   let moduleRef: TestingModule;
