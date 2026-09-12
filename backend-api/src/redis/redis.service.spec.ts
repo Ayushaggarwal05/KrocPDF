@@ -3,6 +3,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from './redis.service';
 import { ConfigService } from '@nestjs/config';
 
+vi.mock('ioredis', () => {
+  return {
+    Redis: class {
+      quit = vi.fn();
+      ping = vi.fn();
+      xadd = vi.fn();
+      subscribe = vi.fn();
+      on = vi.fn();
+      off = vi.fn();
+      unsubscribe = vi.fn();
+    },
+  };
+});
+
 describe('RedisService', () => {
   let service: RedisService;
 
