@@ -38,6 +38,13 @@ const seoConfigs: Record<string, SeoConfig> = {
     h1: 'JPEG to PDF',
     subtitle: 'High quality JPEG conversion. No limits, no watermarks.',
     toolSchemaName: 'JPEG to PDF Converter'
+  },
+  'merge-pdf': {
+    title: 'Merge PDF Files Online | Free & Secure | KrocPDF',
+    description: 'Combine multiple PDF documents into a single file instantly. 100% secure, local in-browser merging or high-capacity cloud batching.',
+    h1: 'Merge PDF',
+    subtitle: 'Combine multiple PDFs into one document easily and securely.',
+    toolSchemaName: 'Merge PDF Tool'
   }
 };
 
@@ -76,8 +83,7 @@ export const toolCards: ToolCardConfig[] = [
     iconId: 'merge',
     accentFrom: '#64748b',
     accentTo: '#475569',
-    comingSoon: true,
-    comingSoonBlurb: 'Merge multiple PDF files into one seamless document. Coming in the next release.',
+    comingSoon: false,
   },
   {
     slug: 'compress-pdf',

@@ -18,7 +18,7 @@ interface ImageFile {
   previewUrl: string;
 }
 
-export function ConverterWidget() {
+export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [settings, setSettings] = useState({ pageSize: 'A4', orientation: 'PORTRAIT', margins: 'NONE', dpi: 150, engine: 'cloud', transparencyMode: 'flatten_white' });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -39,9 +39,11 @@ export function ConverterWidget() {
     e.preventDefault();
     if (status !== 'IDLE' && status !== 'ERROR') return;
 
-    const droppedFiles = Array.from(e.dataTransfer.files).filter(f =>
-      f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp' || f.type === 'application/pdf'
-    );
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(f => {
+      if (tool === 'merge-pdf') return f.type === 'application/pdf';
+      if (tool !== 'unified') return f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp';
+      return f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp' || f.type === 'application/pdf';
+    });
 
     const validFiles: File[] = [];
     for (const f of droppedFiles) {
@@ -82,7 +84,7 @@ export function ConverterWidget() {
       }
       return nextImages;
     });
-  }, [status, setStatus, setMessage]);
+  }, [status, setStatus, setMessage, tool]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -277,15 +279,19 @@ export function ConverterWidget() {
               className="md:col-span-2 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-900/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer min-h-[300px]"
             >
               <UploadCloud className="w-12 h-12 text-slate-500 mb-4" />
-              <h3 className="text-xl font-medium mb-2 text-slate-100">Drag & Drop images here</h3>
-              <p className="text-slate-400 mb-6">Supports .JPG, .JPEG, .PNG up to 50 Megapixels</p>
+              <h3 className="text-xl font-medium mb-2 text-slate-100">
+                {tool === 'merge-pdf' ? 'Drag & Drop PDFs here' : 'Drag & Drop images here'}
+              </h3>
+              <p className="text-slate-400 mb-6">
+                {tool === 'merge-pdf' ? 'Supports .PDF files' : 'Supports .JPG, .JPEG, .PNG up to 50 Megapixels'}
+              </p>
 
               <label className="px-6 py-3 bg-slate-100 text-slate-950 font-semibold rounded-lg hover:bg-emerald-400 hover:text-slate-950 transition-all cursor-pointer shadow-xl shadow-black/30">
                 Browse Files
                 <input
                   type="file"
                   multiple
-                  accept="image/jpeg, image/png, application/pdf"
+                  accept={tool === 'merge-pdf' ? 'application/pdf' : (tool === 'unified' ? 'image/jpeg, image/png, application/pdf' : 'image/jpeg, image/png')}
                   className="hidden"
                   onChange={async (e) => {
                     if (!e.target.files) return;

@@ -10,6 +10,7 @@ export function generateStaticParams() {
     { tool: 'jpg-to-pdf' },
     { tool: 'png-to-pdf' },
     { tool: 'jpeg-to-pdf' },
+    { tool: 'merge-pdf' },
   ];
 }
 
@@ -39,7 +40,7 @@ export default async function ToolPage({
   const { tool } = await params;
 
   // Only allow valid routes
-  const validTools = ['jpg-to-pdf', 'png-to-pdf', 'jpeg-to-pdf'];
+  const validTools = ['jpg-to-pdf', 'png-to-pdf', 'jpeg-to-pdf', 'merge-pdf'];
   if (!validTools.includes(tool)) {
     notFound();
   }
@@ -88,7 +89,7 @@ export default async function ToolPage({
           <p className="text-slate-400">{config.subtitle}</p>
         </div>
 
-        <ConverterWidget />
+        <ConverterWidget tool={tool} />
 
         {/* Sibling Tool Links */}
         {siblings.length > 0 && (

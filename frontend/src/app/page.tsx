@@ -45,12 +45,18 @@ export default function HomePage() {
     setDragActive(false);
 
     const files = Array.from(e.dataTransfer.files).filter(
-      f => f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp'
+      f => f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp' || f.type === 'application/pdf'
     );
 
     if (files.length === 0) return;
 
     // Detect file type and route to the right tool
+    const hasPdf = files.some(f => f.type === 'application/pdf');
+    if (hasPdf) {
+      router.push('/merge-pdf');
+      return;
+    }
+    
     const hasPng = files.some(f => f.type === 'image/png');
     const targetTool = hasPng ? 'png-to-pdf' : 'jpg-to-pdf';
     router.push(`/${targetTool}`);
@@ -120,7 +126,7 @@ export default function HomePage() {
                   {dragActive ? 'Release to convert' : 'Drop any image here to start'}
                 </p>
                 <p className="text-sm text-slate-400 mt-1">
-                  JPG, PNG, JPEG — auto-detected and routed to the right tool
+                  JPG, PNG, JPEG, PDF — auto-detected and routed to the right tool
                 </p>
               </div>
               <Link
