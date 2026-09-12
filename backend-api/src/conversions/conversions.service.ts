@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { RedisService } from '../redis/redis.service';
 import { InitiateConversionDto } from './conversions.dto';
-import { JobStatus, PageSize, PageOrientation } from '@prisma/client';
+import { JobStatus, PageSize, PageOrientation, JobType } from '@prisma/client';
 import { mergeMap } from 'rxjs/operators';
 
 @Injectable()
@@ -22,6 +22,7 @@ export class ConversionsService {
     const job = await this.prisma.conversionJob.create({
       data: {
         status: JobStatus.CREATED,
+        jobType: dto.jobType || JobType.IMAGE_TO_PDF,
         pageSize: dto.settings?.pageSize || PageSize.A4,
         orientation: dto.settings?.orientation || PageOrientation.PORTRAIT,
         margins: dto.settings?.margins || 'NONE',
@@ -100,6 +101,7 @@ export class ConversionsService {
 
     const payload = {
       job_id: job.id,
+      job_type: job.jobType,
       dpi: job.dpi,
       page_size: job.pageSize,
       orientation: job.orientation,

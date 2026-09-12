@@ -4,9 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useConversion } from '@/hooks/useConversion';
 import { uploadFileToS3 } from '@/lib/uploader';
-import { generateLocalPdf } from '@/lib/localConverter';
+import { generateLocalPdf, mergePdfsLocally } from '@/lib/localConverter';
 import { API_BASE_URL } from '@/lib/api';
 import { validateImageHeader } from '@/lib/sanitizer';
+import { validatePdfBinary } from '@/lib/binaryValidator';
 import { PrivacyTimer } from '@/components/PrivacyTimer';
 import { UploadCloud, GripVertical, X, FileImage, Settings, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
@@ -39,16 +40,25 @@ export function ConverterWidget() {
     if (status !== 'IDLE' && status !== 'ERROR') return;
 
     const droppedFiles = Array.from(e.dataTransfer.files).filter(f =>
-      f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp'
+      f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp' || f.type === 'application/pdf'
     );
 
     const validFiles: File[] = [];
     for (const f of droppedFiles) {
-      if (await validateImageHeader(f)) {
-        validFiles.push(f);
+      if (f.type === 'application/pdf') {
+        if (await validatePdfBinary(f)) {
+          validFiles.push(f);
+        } else {
+          setStatus('ERROR');
+          setMessage(`Invalid or corrupt PDF: ${f.name}`);
+        }
       } else {
-        setStatus('ERROR');
-        setMessage(`Invalid or corrupt image: ${f.name}`);
+        if (await validateImageHeader(f)) {
+          validFiles.push(f);
+        } else {
+          setStatus('ERROR');
+          setMessage(`Invalid or corrupt image: ${f.name}`);
+        }
       }
     }
 
@@ -61,7 +71,11 @@ export function ConverterWidget() {
     setImages(prev => {
       const nextImages = [...prev, ...newImages];
       const totalBytes = nextImages.reduce((sum, img) => sum + img.file.size, 0);
-      if (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024) {
+      const hasPdf = nextImages.some(img => img.file.type === 'application/pdf');
+      
+      const isMassive = hasPdf ? (nextImages.length > 15 || totalBytes > 25 * 1024 * 1024) : (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024);
+
+      if (isMassive) {
         setSettings(s => ({ ...s, engine: 'cloud' }));
         setToastMsg('Payload too large for local processing. Falling back to Cloud Batch Mode.');
         setTimeout(() => setToastMsg(null), 5000);
@@ -98,11 +112,20 @@ export function ConverterWidget() {
       if (settings.engine === 'local') {
         setMessage('Generating PDF locally in your browser...');
         try {
-          const url = await generateLocalPdf(
-            images.map(img => img.file),
-            settings,
-            (percent) => setProgress(percent)
-          );
+          const hasPdf = images.some(img => img.file.type === 'application/pdf');
+          let url;
+          if (hasPdf) {
+            url = await mergePdfsLocally(
+              images.map(img => img.file),
+              (percent) => setProgress(percent)
+            );
+          } else {
+            url = await generateLocalPdf(
+              images.map(img => img.file),
+              settings,
+              (percent) => setProgress(percent)
+            );
+          }
           setMessage('Local conversion complete!');
           setDownloadUrl(url); // Set download directly, skipping SSE
           setStatus('READY');
@@ -120,8 +143,11 @@ export function ConverterWidget() {
       }
 
       setMessage('Requesting upload URLs...');
+      const hasPdf = images.some(img => img.file.type === 'application/pdf');
+      const jobType = hasPdf ? 'MERGE_PDF' : 'IMAGE_TO_PDF';
 
       const payload = {
+        jobType,
         settings,
         files: images.map(img => ({
           fileName: img.file.name,
@@ -259,18 +285,27 @@ export function ConverterWidget() {
                 <input
                   type="file"
                   multiple
-                  accept="image/jpeg, image/png"
+                  accept="image/jpeg, image/png, application/pdf"
                   className="hidden"
                   onChange={async (e) => {
                     if (!e.target.files) return;
                     const selectedFiles = Array.from(e.target.files);
                     const validFiles: File[] = [];
                     for (const f of selectedFiles) {
-                      if (await validateImageHeader(f)) {
-                        validFiles.push(f);
+                      if (f.type === 'application/pdf') {
+                        if (await validatePdfBinary(f)) {
+                          validFiles.push(f);
+                        } else {
+                          setStatus('ERROR');
+                          setMessage(`Invalid or corrupt PDF: ${f.name}`);
+                        }
                       } else {
-                        setStatus('ERROR');
-                        setMessage(`Invalid or corrupt image: ${f.name}`);
+                        if (await validateImageHeader(f)) {
+                          validFiles.push(f);
+                        } else {
+                          setStatus('ERROR');
+                          setMessage(`Invalid or corrupt image: ${f.name}`);
+                        }
                       }
                     }
                     const newImages = validFiles.map(file => ({
@@ -281,7 +316,10 @@ export function ConverterWidget() {
                     setImages(prev => {
                       const nextImages = [...prev, ...newImages];
                       const totalBytes = nextImages.reduce((sum, img) => sum + img.file.size, 0);
-                      if (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024) {
+                      const hasPdf = nextImages.some(img => img.file.type === 'application/pdf');
+                      const isMassive = hasPdf ? (nextImages.length > 15 || totalBytes > 25 * 1024 * 1024) : (nextImages.length > 20 || totalBytes > 50 * 1024 * 1024);
+
+                      if (isMassive) {
                         setSettings(s => ({ ...s, engine: 'cloud' }));
                         setToastMsg('Payload too large for local processing. Falling back to Cloud Batch Mode.');
                         setTimeout(() => setToastMsg(null), 5000);

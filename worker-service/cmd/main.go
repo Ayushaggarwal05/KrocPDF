@@ -99,8 +99,13 @@ func main() {
 			log.Printf("Invalid files payload for job %s", jobId)
 			return nil
 		}
+		
+		jobType, _ := payload["job_type"].(string)
+		if jobType == "" {
+			jobType = "IMAGE_TO_PDF"
+		}
 
-		worker.PublishEvent(ctx, jobId, "PROCESSING", 10, "Downloading and validating images...")
+		worker.PublishEvent(ctx, jobId, "PROCESSING", 10, "Downloading files...")
 		
 		tempDir := filepath.Join(os.TempDir(), jobId)
 		if err := os.MkdirAll(tempDir, 0755); err != nil {
@@ -130,71 +135,101 @@ func main() {
 			return fileItems[i].Order < fileItems[j].Order
 		})
 
-		for i, item := range fileItems {
-			headerBytes, err := s3Client.GetHeaderBytes(ctx, item.Key, 65535)
-			if err != nil {
-				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Failed to read image %d", i+1))
-				return err
-			}
-			format, err := validator.Sniff(headerBytes)
-			if err != nil {
-				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Image %d validation failed: %v", i+1, err))
-				return err
-			}
-
-			stream, err := s3Client.DownloadStream(ctx, item.Key)
-			if err != nil {
-				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Failed to download image %d", i+1))
-				return err
-			}
-			
-			localPath := filepath.Join(tempDir, fmt.Sprintf("img_%d.%s", i, format))
-			outFile, err := os.Create(localPath)
-			if err != nil {
-				stream.Close()
-				return err
-			}
-			io.Copy(outFile, stream)
-			outFile.Close()
-			stream.Close()
-
-			imagePaths = append(imagePaths, localPath)
-		}
-
-		pageSize, ok := payload["page_size"].(string)
-		if !ok { pageSize = "A4" }
-		
-		orientation, ok := payload["orientation"].(string)
-		if !ok { orientation = "PORTRAIT" }
-		
-		margins, ok := payload["margins"].(string)
-		if !ok { margins = "NONE" }
-
-		transparencyMode, ok := payload["transparency_mode"].(string)
-		if !ok { transparencyMode = "FLATTEN_WHITE" }
-
-		var finalImagePaths []string
-		for i, localPath := range imagePaths {
-			// Extract format from the localPath extension
-			ext := filepath.Ext(localPath)
-			format := "jpg"
-			if len(ext) > 1 {
-				format = ext[1:]
-			}
-			processedPath, err := processor.ProcessImage(localPath, format, transparencyMode)
-			if err != nil {
-				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Image processing failed for %d: %v", i+1, err))
-				return err
-			}
-			finalImagePaths = append(finalImagePaths, processedPath)
-		}
-
-		worker.PublishEvent(ctx, jobId, "PROCESSING", 60, "Generating PDF...")
-		
 		outPath := filepath.Join(tempDir, "output.pdf")
-		if err := converter.GeneratePDF(ctx, finalImagePaths, outPath, pageSize, orientation, margins); err != nil {
-			worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("PDF Generation failed: %v", err))
-			return err
+
+		if jobType == "MERGE_PDF" {
+			var downloadedPaths []string
+			for i, item := range fileItems {
+				stream, err := s3Client.DownloadStream(ctx, item.Key)
+				if err != nil {
+					worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Failed to download PDF %d", i+1))
+					return err
+				}
+				
+				localPath := filepath.Join(tempDir, fmt.Sprintf("doc_%d.pdf", i))
+				outFile, err := os.Create(localPath)
+				if err != nil {
+					stream.Close()
+					return err
+				}
+				io.Copy(outFile, stream)
+				outFile.Close()
+				stream.Close()
+
+				downloadedPaths = append(downloadedPaths, localPath)
+			}
+
+			worker.PublishEvent(ctx, jobId, "PROCESSING", 60, "Merging PDFs...")
+			if err := converter.MergePDFs(ctx, downloadedPaths, outPath); err != nil {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("PDF Merge failed: %v", err))
+				return err
+			}
+		} else {
+			for i, item := range fileItems {
+				headerBytes, err := s3Client.GetHeaderBytes(ctx, item.Key, 65535)
+				if err != nil {
+					worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Failed to read image %d", i+1))
+					return err
+				}
+				format, err := validator.Sniff(headerBytes)
+				if err != nil {
+					worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Image %d validation failed: %v", i+1, err))
+					return err
+				}
+
+				stream, err := s3Client.DownloadStream(ctx, item.Key)
+				if err != nil {
+					worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Failed to download image %d", i+1))
+					return err
+				}
+				
+				localPath := filepath.Join(tempDir, fmt.Sprintf("img_%d.%s", i, format))
+				outFile, err := os.Create(localPath)
+				if err != nil {
+					stream.Close()
+					return err
+				}
+				io.Copy(outFile, stream)
+				outFile.Close()
+				stream.Close()
+
+				imagePaths = append(imagePaths, localPath)
+			}
+
+			pageSize, ok := payload["page_size"].(string)
+			if !ok { pageSize = "A4" }
+			
+			orientation, ok := payload["orientation"].(string)
+			if !ok { orientation = "PORTRAIT" }
+			
+			margins, ok := payload["margins"].(string)
+			if !ok { margins = "NONE" }
+
+			transparencyMode, ok := payload["transparency_mode"].(string)
+			if !ok { transparencyMode = "FLATTEN_WHITE" }
+
+			var finalImagePaths []string
+			for i, localPath := range imagePaths {
+				// Extract format from the localPath extension
+				ext := filepath.Ext(localPath)
+				format := "jpg"
+				if len(ext) > 1 {
+					format = ext[1:]
+				}
+				processedPath, err := processor.ProcessImage(localPath, format, transparencyMode)
+				if err != nil {
+					worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("Image processing failed for %d: %v", i+1, err))
+					return err
+				}
+				finalImagePaths = append(finalImagePaths, processedPath)
+			}
+
+			worker.PublishEvent(ctx, jobId, "PROCESSING", 60, "Generating PDF...")
+			
+			if err := converter.GeneratePDF(ctx, finalImagePaths, outPath, pageSize, orientation, margins); err != nil {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("PDF Generation failed: %v", err))
+				return err
+			}
 		}
 
 		worker.PublishEvent(ctx, jobId, "PROCESSING", 85, "Uploading PDF...")

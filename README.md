@@ -250,6 +250,13 @@ Our platform decouples stateful API orchestration from CPU-bound image processin
                                                                                                └── (SSE Progress)  ──> Next.js UI
 ```
 
+### 📚 Feature Specifications & Deep Dives
+
+For detailed breakdowns of how our dual-engine architecture processes specific formats, view our specialized feature specifications:
+
+- [**Merge PDF Engine (v2.1)**](./docs/features/merge-pdf.md): Explores the Smart Auto-Fallback routing between in-browser `pdf-lib` and cloud `pdfcpu` workers, complete with DTO schemas and binary `%PDF-` validation gates.
+- *More format specifications coming soon.*
+
 <br/>
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=1,2,3,4&height=3&section=header" width="100%" alt="divider" />

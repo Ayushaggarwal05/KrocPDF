@@ -42,3 +42,8 @@ func GeneratePDF(ctx context.Context, imagePaths []string, outPath string, pageS
 	err := api.ImportImagesFile(imagePaths, outPath, imp, nil)
 	return err
 }
+
+// MergePDFs takes a list of downloaded PDF file paths and merges them into a single PDF.
+func MergePDFs(ctx context.Context, pdfPaths []string, outPath string) error {
+	return api.MergeCreateFile(pdfPaths, outPath, false, nil)
+}
