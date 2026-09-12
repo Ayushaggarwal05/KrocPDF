@@ -80,15 +80,15 @@ export default function HomePage() {
       <section className="relative py-20 sm:py-28 lg:py-36 px-4">
         <div className="max-w-5xl mx-auto text-center animate-fade-in-up">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
-            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradientShift_6s_ease_infinite]">
+            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-300 bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradientShift_8s_ease_infinite]">
               Every Document Tool
             </span>
             <br />
-            <span className="text-neutral-200">You Need</span>
+            <span className="text-slate-100">You Need</span>
           </h1>
-          <p className="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
             Privacy-first document conversion. Convert images to PDF instantly — locally in your browser or via secure cloud workers.{' '}
-            <span className="text-neutral-300 font-medium">Free, open source, no watermarks.</span>
+            <span className="text-emerald-300/90 font-medium">Free, open source, no watermarks.</span>
           </p>
 
           {/* Hero Drop Zone CTA */}
@@ -99,8 +99,8 @@ export default function HomePage() {
             className={clsx(
               "relative max-w-xl mx-auto border-2 border-dashed rounded-2xl p-8 sm:p-10 transition-all duration-300 cursor-pointer group",
               dragActive
-                ? "border-blue-500 bg-blue-500/10 scale-[1.02] shadow-lg shadow-blue-500/10"
-                : "border-neutral-700 hover:border-neutral-500 bg-neutral-900/40 hover:bg-neutral-900/60"
+                ? "border-emerald-500 bg-emerald-500/10 scale-[1.02] shadow-lg shadow-emerald-500/15"
+                : "border-slate-800 hover:border-emerald-500/40 bg-slate-900/30 hover:bg-slate-900/60"
             )}
             role="button"
             tabIndex={0}
@@ -110,22 +110,22 @@ export default function HomePage() {
               <div className={clsx(
                 "w-14 h-14 rounded-2xl flex items-center justify-center transition-all",
                 dragActive
-                  ? "bg-blue-500/20 text-blue-400 scale-110"
-                  : "bg-neutral-800 text-neutral-400 group-hover:text-neutral-200 group-hover:bg-neutral-700"
+                  ? "bg-emerald-500/20 text-emerald-400 scale-110"
+                  : "bg-slate-800 text-slate-400 group-hover:text-emerald-300 group-hover:bg-slate-800/80"
               )}>
                 <UploadCloud className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-neutral-200">
+                <p className="text-lg font-semibold text-slate-100">
                   {dragActive ? 'Release to convert' : 'Drop any image here to start'}
                 </p>
-                <p className="text-sm text-neutral-500 mt-1">
+                <p className="text-sm text-slate-400 mt-1">
                   JPG, PNG, JPEG — auto-detected and routed to the right tool
                 </p>
               </div>
               <Link
                 href="/jpg-to-pdf"
-                className="inline-flex items-center px-6 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-500 hover:to-purple-500 transition-all shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25"
+                className="inline-flex items-center px-6 py-2.5 text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-950/40 hover:shadow-emerald-900/60"
               >
                 Start Converting
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -138,7 +138,7 @@ export default function HomePage() {
       {/* ============================================
           Trust Badges
           ============================================ */}
-      <section className="py-6 px-4 border-y border-white/5">
+      <section className="py-6 px-4 border-y border-white/5 bg-slate-950/40">
         <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-3 animate-fade-in">
           <TrustBadge icon={Lock} text="100% Open Source" />
           <TrustBadge icon={Shield} text="Files never leave your browser" />
@@ -147,7 +147,7 @@ export default function HomePage() {
             href="https://github.com/alokprashar864/jpg_to_pdf"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 text-sm text-neutral-500 hover:text-neutral-300 transition-colors"
+            className="flex items-center space-x-1.5 text-sm text-slate-400 hover:text-emerald-400 transition-colors"
           >
             <GithubIcon className="w-4 h-4" />
             <span>Star on GitHub</span>
@@ -161,8 +161,8 @@ export default function HomePage() {
       <section className="py-16 sm:py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 animate-fade-in-up">
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-100 mb-3">All PDF Tools</h2>
-            <p className="text-neutral-500 max-w-lg mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-3">All PDF Tools</h2>
+            <p className="text-slate-400 max-w-lg mx-auto">
               Choose a tool below to get started. More tools are on the way.
             </p>
           </div>
@@ -190,8 +190,8 @@ export default function HomePage() {
       <section className="py-16 sm:py-20 px-4 border-t border-white/5">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 animate-fade-in-up">
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-100 mb-3">Why KrocPDF?</h2>
-            <p className="text-neutral-500">Built different. Built right.</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-3">Why KrocPDF?</h2>
+            <p className="text-slate-400">Built different. Built right.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger-children">
@@ -199,19 +199,19 @@ export default function HomePage() {
               icon={Shield}
               title="Privacy First"
               description="Your files are processed locally in your browser using WebAssembly. Nothing is uploaded unless you choose Cloud mode."
-              accentColor="blue"
+              accentColor="emerald"
             />
             <FeatureCard
               icon={Zap}
               title="Blazing Fast"
               description="Dual-engine architecture: instant local processing or high-throughput Go workers for batch conversions."
-              accentColor="purple"
+              accentColor="teal"
             />
             <FeatureCard
               icon={Wifi}
               title="Works Offline"
               description="Local conversion works without an internet connection. No accounts, no uploads, no tracking."
-              accentColor="green"
+              accentColor="cyan"
             />
           </div>
         </div>
@@ -226,8 +226,8 @@ export default function HomePage() {
 
 function TrustBadge({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
-    <div className="flex items-center space-x-1.5 text-sm text-neutral-500">
-      <Icon className="w-4 h-4 text-green-500/70" />
+    <div className="flex items-center space-x-1.5 text-sm text-slate-400">
+      <Icon className="w-4 h-4 text-emerald-400" />
       <span>{text}</span>
     </div>
   );
@@ -257,7 +257,7 @@ function ToolCard({
     return (
       <div className="tooltip-container relative">
         <div
-          className="card-glow-muted bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6 text-center"
+          className="card-glow-muted bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 text-center"
           onClick={() => setActiveTooltip(isTooltipOpen ? null : tool.slug)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -270,42 +270,42 @@ function ToolCard({
           aria-label={`${tool.name} — coming soon`}
           aria-expanded={isTooltipOpen}
         >
-          <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4 bg-neutral-800/50">
-            <Icon className="w-6 h-6 text-neutral-600" />
+          <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4 bg-slate-800/40">
+            <Icon className="w-6 h-6 text-slate-500" />
           </div>
           <div className="flex items-center justify-center space-x-2 mb-2">
-            <h3 className="font-semibold text-neutral-500">{tool.name}</h3>
-            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-neutral-800 text-neutral-500">
+            <h3 className="font-semibold text-slate-400">{tool.name}</h3>
+            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/[0.08] border border-emerald-500/15 text-emerald-400/80">
               Soon
             </span>
           </div>
-          <p className="text-sm text-neutral-600">{tool.shortDescription}</p>
+          <p className="text-sm text-slate-500">{tool.shortDescription}</p>
         </div>
 
         {/* Tooltip */}
         {isTooltipOpen && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 w-72 animate-scale-in">
-            <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-4 shadow-xl shadow-black/30">
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-xl shadow-black/40">
               <div className="flex items-center space-x-2 mb-2">
-                <Bell className="w-4 h-4 text-blue-400" />
-                <p className="text-sm font-semibold text-neutral-200">Coming Soon</p>
+                <Bell className="w-4 h-4 text-emerald-400" />
+                <p className="text-sm font-semibold text-slate-200">Coming Soon</p>
               </div>
-              <p className="text-xs text-neutral-400 mb-3">{tool.comingSoonBlurb}</p>
+              <p className="text-xs text-slate-400 mb-3">{tool.comingSoonBlurb}</p>
 
               {notifySubmitted.has(tool.slug) ? (
-                <p className="text-xs text-green-400 font-medium">
+                <p className="text-xs text-emerald-400 font-medium">
                   ✓ We&apos;ll notify you when this ships!
                 </p>
               ) : (
                 <div className="flex space-x-2">
                   <div className="flex-1 relative">
-                    <Mail className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <Mail className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="email"
                       placeholder="your@email.com"
                       value={notifyEmail}
                       onChange={(e) => setNotifyEmail(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 text-xs bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                      className="w-full pl-8 pr-3 py-2 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
                       aria-label="Email for notification"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') onNotify(tool.slug);
@@ -317,7 +317,7 @@ function ToolCard({
                       e.stopPropagation();
                       onNotify(tool.slug);
                     }}
-                    className="px-3 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+                    className="px-3 py-2 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
                   >
                     Notify
                   </button>
@@ -325,7 +325,7 @@ function ToolCard({
               )}
 
               {/* Arrow */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-neutral-900" />
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900" />
             </div>
           </div>
         )}
@@ -336,14 +336,15 @@ function ToolCard({
   return (
     <Link
       href={`/${tool.slug}`}
-      className="card-glow bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6 text-center block"
+      className="card-glow bg-slate-900/30 border border-slate-800/80 hover:border-emerald-500/40 rounded-2xl p-6 text-center block transition-all"
       role="link"
       aria-label={`Open ${tool.name} converter`}
     >
       <div
         className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4"
         style={{
-          background: `linear-gradient(135deg, ${tool.accentFrom}15, ${tool.accentTo}15)`,
+          background: `linear-gradient(135deg, ${tool.accentFrom}20, ${tool.accentTo}10)`,
+          border: `1px solid ${tool.accentFrom}30`
         }}
       >
         <Icon
@@ -351,8 +352,8 @@ function ToolCard({
           style={{ color: tool.accentFrom }}
         />
       </div>
-      <h3 className="font-semibold text-neutral-200 mb-2">{tool.name}</h3>
-      <p className="text-sm text-neutral-500">{tool.shortDescription}</p>
+      <h3 className="font-semibold text-slate-100 mb-2">{tool.name}</h3>
+      <p className="text-sm text-slate-400">{tool.shortDescription}</p>
     </Link>
   );
 }
@@ -366,23 +367,23 @@ function FeatureCard({
   icon: React.ElementType;
   title: string;
   description: string;
-  accentColor: 'blue' | 'purple' | 'green';
+  accentColor: 'emerald' | 'teal' | 'cyan';
 }) {
   const colorMap = {
-    blue: { bg: 'bg-blue-500/10', text: 'text-blue-400' },
-    purple: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
-    green: { bg: 'bg-green-500/10', text: 'text-green-400' },
+    emerald: { bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400' },
+    teal: { bg: 'bg-teal-500/10 border-teal-500/20', text: 'text-teal-400' },
+    cyan: { bg: 'bg-cyan-500/10 border-cyan-500/20', text: 'text-cyan-400' },
   };
 
   const colors = colorMap[accentColor];
 
   return (
-    <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-2xl p-6 hover:border-neutral-700 transition-colors">
-      <div className={clsx("w-10 h-10 rounded-xl flex items-center justify-center mb-4", colors.bg)}>
+    <div className="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-6 hover:border-emerald-500/30 transition-colors">
+      <div className={clsx("w-10 h-10 rounded-xl flex items-center justify-center mb-4 border", colors.bg)}>
         <Icon className={clsx("w-5 h-5", colors.text)} />
       </div>
-      <h3 className="font-semibold text-neutral-200 mb-2">{title}</h3>
-      <p className="text-sm text-neutral-500 leading-relaxed">{description}</p>
+      <h3 className="font-semibold text-slate-100 mb-2">{title}</h3>
+      <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
     </div>
   );
 }

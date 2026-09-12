@@ -25,8 +25,8 @@ export function Footer() {
                 />
               </div>
               <span className="text-base font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Kroc</span>
-                <span className="text-neutral-300">PDF</span>
+                <span className="text-emerald-400 font-extrabold">Kroc</span>
+                <span className="text-slate-200">PDF</span>
               </span>
             </Link>
             <p className="text-sm text-neutral-500 leading-relaxed">

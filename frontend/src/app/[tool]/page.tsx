@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ConverterWidget } from '@/components/ConverterWidget';
-import { getSeoConfig, getSiblingTools, toolCards } from '@/lib/seoConfigs';
+import { getSeoConfig, getSiblingTools } from '@/lib/seoConfigs';
 import { ArrowLeft } from 'lucide-react';
 
 export function generateStaticParams() {
@@ -26,7 +26,7 @@ export async function generateMetadata({
     title: config.title,
     description: config.description,
     alternates: {
-      canonical: `https://your-domain.com/${tool}`,
+      canonical: `https://krocpdf.app/${tool}`,
     },
   };
 }
@@ -62,7 +62,7 @@ export default async function ToolPage({
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-neutral-950 text-neutral-100 flex flex-col items-center p-4 sm:p-8 font-sans">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 flex flex-col items-center p-4 sm:p-8 font-sans">
       {/* Inject JSON-LD */}
       <script
         type="application/ld+json"
@@ -73,33 +73,33 @@ export default async function ToolPage({
       <div className="max-w-4xl w-full mb-6 pt-4">
         <Link
           href="/"
-          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-300 transition-colors group"
+          className="inline-flex items-center text-sm text-slate-400 hover:text-emerald-300 transition-colors group"
         >
-          <ArrowLeft className="w-4 h-4 mr-1.5 group-hover:-translate-x-0.5 transition-transform" />
+          <ArrowLeft className="w-4 h-4 mr-1.5 group-hover:-translate-x-0.5 transition-transform text-emerald-400" />
           Back to All Tools
         </Link>
       </div>
       
       <div className="max-w-4xl w-full space-y-8 pb-16">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-300 bg-clip-text text-transparent">
             {config.h1}
           </h1>
-          <p className="text-neutral-400">{config.subtitle}</p>
+          <p className="text-slate-400">{config.subtitle}</p>
         </div>
 
         <ConverterWidget />
 
         {/* Sibling Tool Links */}
         {siblings.length > 0 && (
-          <div className="pt-8 border-t border-neutral-800/50">
-            <p className="text-sm text-neutral-500 mb-3">Try also:</p>
+          <div className="pt-8 border-t border-slate-800/80">
+            <p className="text-sm text-slate-400 mb-3">Try also:</p>
             <div className="flex flex-wrap gap-2">
               {siblings.map((sibling) => (
                 <Link
                   key={sibling.slug}
                   href={`/${sibling.slug}`}
-                  className="px-4 py-2 text-sm bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-400 hover:text-white hover:border-neutral-600 transition-all"
+                  className="px-4 py-2 text-sm bg-slate-900/60 border border-slate-800 rounded-lg text-slate-300 hover:text-white hover:border-emerald-500/40 hover:bg-slate-900 transition-all"
                 >
                   {sibling.name}
                 </Link>
