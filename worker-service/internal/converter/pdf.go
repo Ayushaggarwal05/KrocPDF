@@ -36,9 +36,9 @@ func GetImportConfig(pageSize, orientation, margins string) string {
 // Using physical files is preferred for memory constraints.
 func GeneratePDF(ctx context.Context, imagePaths []string, outPath string, pageSize, orientation, margins string) error {
 	importConfig := GetImportConfig(pageSize, orientation, margins)
-	
+
 	imp, _ := api.Import(importConfig, types.POINTS)
-	
+
 	err := api.ImportImagesFile(imagePaths, outPath, imp, nil)
 	return err
 }

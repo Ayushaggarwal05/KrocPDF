@@ -16,7 +16,7 @@ import { Type } from 'class-transformer';
 import { PageSize, PageOrientation, PageMargin, JobType } from '@prisma/client';
 
 export function ValidateFilesMimeType(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'validateFilesMimeType',
       target: object.constructor,
