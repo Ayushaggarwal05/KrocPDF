@@ -44,6 +44,7 @@ export class ConversionsService {
         'jpeg': 'image/jpeg',
         'png': 'image/png',
         'webp': 'image/webp',
+        'pdf': 'application/pdf',
       };
 
       if (extMap[extension] !== file.mimeType) {

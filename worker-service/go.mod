@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.3
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.3
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.111.0
+	github.com/h2non/bimg v1.1.9
 	github.com/pdfcpu/pdfcpu v0.15.0
 	github.com/redis/go-redis/v9 v9.22.0
 )
