@@ -23,6 +23,7 @@ import {
   Settings,
   Loader2,
   Sparkles,
+  FileText,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -769,7 +770,7 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
         </div>
       )}
 
-      {/* Sortable Grid */}
+              {/* Sortable Grid */}
       {(status === 'IDLE' || status === 'ERROR') && images.length > 0 && (
         <div className="pt-8">
           <div className="flex items-center justify-between mb-4">
@@ -839,27 +840,39 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
                             </button>
                           </div>
 
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={img.previewUrl}
-                            alt={img.file.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {/* Thumbnail / PDF Fallback */}
+                          {img.file.type === 'application/pdf' ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 p-2">
+                              <FileText className="w-10 h-10 text-slate-400 mb-1" />
+                              <span className="text-[10px] text-slate-300 font-medium text-center truncate w-full">
+                                {img.file.name}
+                              </span>
+                            </div>
+                          ) : (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={img.previewUrl}
+                              alt={img.file.name}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
 
-                          {/* Drag handle & Preview Overlay on Hover */}
+                          {/* Drag handle & Scanner Preview Overlay on Hover */}
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center p-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActivePreviewIndex(index);
-                                setIsPreviewModalOpen(true);
-                              }}
-                              title="Edit Scanner Filter for this page"
-                              className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold p-1.5 rounded-lg text-[10px] flex items-center gap-1 shadow-lg transition scale-95 hover:scale-100"
-                            >
-                              <Sparkles className="w-3 h-3" /> Edit Scan
-                            </button>
+                            {img.file.type !== 'application/pdf' && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActivePreviewIndex(index);
+                                  setIsPreviewModalOpen(true);
+                                }}
+                                title="Edit Scanner Filter for this page"
+                                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold p-1.5 rounded-lg text-[10px] flex items-center gap-1 shadow-lg transition scale-95 hover:scale-100"
+                              >
+                                <Sparkles className="w-3 h-3" /> Edit Scan
+                              </button>
+                            )}
 
                             <div
                               {...provided.dragHandleProps}
@@ -870,6 +883,7 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
                             </div>
                           </div>
 
+                          {/* Bottom Page Number & Filename Bar */}
                           <div className="absolute bottom-0 left-0 right-0 bg-neutral-950/90 text-[10px] text-center py-1 truncate px-2 font-medium z-10 border-t border-neutral-800">
                             {index + 1}. {img.file.name}
                           </div>
