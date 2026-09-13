@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"bytes"
 	"encoding/base64"
 	"testing"
 )
