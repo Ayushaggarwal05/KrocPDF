@@ -9,7 +9,7 @@ import { API_BASE_URL } from '@/lib/api';
 import { validateImageHeader } from '@/lib/sanitizer';
 import { validatePdfBinary } from '@/lib/binaryValidator';
 import { PrivacyTimer } from '@/components/PrivacyTimer';
-import { UploadCloud, GripVertical, X, FileImage, Settings, Loader2 } from 'lucide-react';
+import { UploadCloud, GripVertical, X, FileImage, Settings, Loader2, FileText } from 'lucide-react';
 import clsx from 'clsx';
 
 interface ImageFile {
@@ -490,8 +490,14 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
                               backgroundColor: '#262626'
                             }}
                           >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover opacity-80" />
+                            {img.file.type === 'application/pdf' ? (
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800">
+                                <FileText className="w-12 h-12 text-slate-400 mb-2" />
+                              </div>
+                            ) : (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={img.previewUrl} alt={img.file.name} draggable={false} className="w-full h-full object-cover opacity-80" />
+                            )}
 
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-2">
                               <button
