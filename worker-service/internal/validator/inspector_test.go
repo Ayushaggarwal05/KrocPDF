@@ -2,33 +2,33 @@ package validator
 
 import (
 	"bytes"
+	"encoding/base64"
 	"testing"
 )
 
-func TestSniffValidJPEG(t *testing.T) {
-	// Dummy JPEG header
-	header := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x60}
-	
-	// Create a minimal valid JPEG for decode config to pass
-	var buf bytes.Buffer
-	buf.Write(header)
-	// Add some dummy frame info to make DecodeConfig pass
-	buf.Write([]byte{0xFF, 0xC0, 0x00, 0x11, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03, 0x01, 0x22, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01, 0xFF, 0xD9})
+var (
+	// Valid 1x1 JPEG
+	validJPEG = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="
+	// Valid 1x1 PNG
+	validPNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+	// Decompression Bomb PNG (10000x10000)
+	bombPNG = "iVBORw0KGgoAAAANSUhEUgAAJ+QAAACfCAYAAADgGz6oAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAElSURBVHja7cExAQAAAMKg9U9tCF8gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4G668AAan9/p4AAAAASUVORK5CYII="
+)
 
-	_, err := Sniff(buf.Bytes())
+func decodeBase64(s string) []byte {
+	data, _ := base64.StdEncoding.DecodeString(s)
+	return data
+}
+
+func TestSniffValidJPEG(t *testing.T) {
+	_, err := Sniff(decodeBase64(validJPEG))
 	if err != nil {
 		t.Errorf("Expected nil error for valid JPEG, got %v", err)
 	}
 }
 
 func TestSniffValidPNG(t *testing.T) {
-	header := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52}
-	var buf bytes.Buffer
-	buf.Write(header)
-	// Add minimal IHDR chunk
-	buf.Write([]byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89})
-	
-	_, err := Sniff(buf.Bytes())
+	_, err := Sniff(decodeBase64(validPNG))
 	if err != nil {
 		t.Errorf("Expected nil error for valid PNG, got %v", err)
 	}
@@ -51,14 +51,7 @@ func TestSniffInvalidMagicBytes(t *testing.T) {
 }
 
 func TestSniffDecompressionBomb(t *testing.T) {
-	// A valid PNG but width/height are huge
-	header := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52}
-	var buf bytes.Buffer
-	buf.Write(header)
-	// IHDR chunk: 10000 x 10000 (100 MP)
-	buf.Write([]byte{0x00, 0x00, 0x27, 0x10, 0x00, 0x00, 0x27, 0x10, 0x08, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-	
-	_, err := Sniff(buf.Bytes())
+	_, err := Sniff(decodeBase64(bombPNG))
 	if err != ErrDecompressionBomb {
 		t.Errorf("Expected ErrDecompressionBomb, got %v", err)
 	}
