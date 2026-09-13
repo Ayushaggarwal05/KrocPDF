@@ -495,8 +495,10 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
                                 <FileText className="w-12 h-12 text-slate-400 mb-2" />
                               </div>
                             ) : (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={img.previewUrl} alt={img.file.name} draggable={false} className="w-full h-full object-cover opacity-80" />
+                              <>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={img.previewUrl} alt={img.file.name} draggable={false} className="w-full h-full object-cover opacity-80" />
+                              </>
                             )}
 
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-2">
