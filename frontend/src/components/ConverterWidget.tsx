@@ -512,7 +512,7 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
                             <div {...provided.dragHandleProps} className="self-center p-2 cursor-grab active:cursor-grabbing text-white">
                               <GripVertical className="w-6 h-6" />
                             </div>
-                            " " </div>
+                             </div>
 
                           <div className="absolute bottom-0 left-0 right-0 bg-neutral-950/90 text-[10px] text-center py-1 truncate px-2 font-medium">
                             {index + 1}. {img.file.name}
