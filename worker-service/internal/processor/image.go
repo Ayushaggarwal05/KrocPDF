@@ -3,7 +3,6 @@ package processor
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/h2non/bimg"
 )
