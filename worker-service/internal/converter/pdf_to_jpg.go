@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -56,7 +55,6 @@ func PdfToJpg(ctx context.Context, inPath string, outZipPath string, quality int
 			return fmt.Errorf("failed to create page directory: %w", err)
 		}
 
-		pagePath := filepath.Join(pageDir, "page.pdf")
 		defer os.RemoveAll(pageDir)
 
 		conf := model.NewDefaultConfiguration()
