@@ -13,7 +13,7 @@ import {
   ValidationArguments
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PageSize, PageOrientation, PageMargin, JobType } from '@prisma/client';
+import { PageSize, PageOrientation, PageMargin, JobType, CompressionLevel } from '@prisma/client';
 
 export function ValidateFilesMimeType(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
@@ -32,7 +32,7 @@ export function ValidateFilesMimeType(validationOptions?: ValidationOptions) {
           for (const file of files) {
             if (jobType === JobType.IMAGE_TO_PDF) {
               if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimeType)) return false;
-            } else if (jobType === JobType.MERGE_PDF) {
+            } else if (jobType === JobType.MERGE_PDF || jobType === JobType.COMPRESS_PDF || jobType === JobType.PDF_TO_JPG) {
               if (file.mimeType !== 'application/pdf') return false;
             }
           }
@@ -40,8 +40,8 @@ export function ValidateFilesMimeType(validationOptions?: ValidationOptions) {
         },
         defaultMessage(args: ValidationArguments) {
           const dto = args.object as InitiateConversionDto;
-          if (dto.jobType === JobType.MERGE_PDF) {
-            return 'All files must be application/pdf for MERGE_PDF jobs';
+          if (dto.jobType === JobType.MERGE_PDF || dto.jobType === JobType.COMPRESS_PDF || dto.jobType === JobType.PDF_TO_JPG) {
+            return 'All files must be application/pdf for this job type';
           }
           return 'All files must be valid images (jpeg, png, webp) for IMAGE_TO_PDF jobs';
         }
@@ -71,6 +71,16 @@ export class ConversionSettingsDto {
   @IsIn(['flatten_white', 'flatten_black', 'keep_transparent'])
   @IsOptional()
   transparencyMode?: string;
+
+  @IsEnum(CompressionLevel)
+  @IsOptional()
+  compressionLevel?: CompressionLevel;
+
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  imageQuality?: number;
 }
 
 export class FileDto {

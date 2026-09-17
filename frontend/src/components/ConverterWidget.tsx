@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useConversion } from '@/hooks/useConversion';
 import { uploadFileToS3 } from '@/lib/uploader';
-import { generateLocalPdf, mergePdfsLocally } from '@/lib/localConverter';
+import { generateLocalPdf, mergePdfsLocally, convertPdfToJpgLocally } from '@/lib/localConverter';
 import { API_BASE_URL } from '@/lib/api';
 import { validateImageHeader } from '@/lib/sanitizer';
 import { validatePdfBinary } from '@/lib/binaryValidator';
@@ -20,7 +20,7 @@ interface ImageFile {
 
 export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
   const [images, setImages] = useState<ImageFile[]>([]);
-  const [settings, setSettings] = useState({ pageSize: 'A4', orientation: 'PORTRAIT', margins: 'NONE', dpi: 150, engine: 'cloud', transparencyMode: 'flatten_white' });
+  const [settings, setSettings] = useState({ pageSize: 'A4', orientation: 'PORTRAIT', margins: 'NONE', dpi: 150, engine: tool === 'compress-pdf' ? 'cloud' : 'cloud', transparencyMode: 'flatten_white', compressionLevel: 'MEDIUM', imageQuality: 80 });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const { status, setStatus, progress, setProgress, message, setMessage, downloadUrl, setDownloadUrl, jobId, triggerJobAndListen, cleanupSSE } = useConversion();
@@ -40,7 +40,7 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
     if (status !== 'IDLE' && status !== 'ERROR') return;
 
     const droppedFiles = Array.from(e.dataTransfer.files).filter(f => {
-      if (tool === 'merge-pdf') return f.type === 'application/pdf';
+      if (tool === 'merge-pdf' || tool === 'compress-pdf' || tool === 'pdf-to-jpg') return f.type === 'application/pdf';
       if (tool !== 'unified') return f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp';
       return f.type === 'image/jpeg' || f.type === 'image/png' || f.type === 'image/webp' || f.type === 'application/pdf';
     });
@@ -112,21 +112,25 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
       setProgress(0);
 
       if (settings.engine === 'local') {
-        setMessage('Generating PDF locally in your browser...');
+        setMessage('Generating locally in your browser...');
         try {
-          const hasPdf = images.some(img => img.file.type === 'application/pdf');
           let url;
-          if (hasPdf) {
-            url = await mergePdfsLocally(
-              images.map(img => img.file),
-              (percent) => setProgress(percent)
-            );
+          if (tool === 'pdf-to-jpg') {
+            url = await convertPdfToJpgLocally(images[0].file, settings, (percent) => setProgress(percent));
           } else {
-            url = await generateLocalPdf(
-              images.map(img => img.file),
-              settings,
-              (percent) => setProgress(percent)
-            );
+            const hasPdf = images.some(img => img.file.type === 'application/pdf');
+            if (hasPdf) {
+              url = await mergePdfsLocally(
+                images.map(img => img.file),
+                (percent) => setProgress(percent)
+              );
+            } else {
+              url = await generateLocalPdf(
+                images.map(img => img.file),
+                settings,
+                (percent) => setProgress(percent)
+              );
+            }
           }
           setMessage('Local conversion complete!');
           setDownloadUrl(url); // Set download directly, skipping SSE
@@ -145,8 +149,11 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
       }
 
       setMessage('Requesting upload URLs...');
-      const hasPdf = images.some(img => img.file.type === 'application/pdf');
-      const jobType = hasPdf ? 'MERGE_PDF' : 'IMAGE_TO_PDF';
+      
+      let jobType = 'IMAGE_TO_PDF';
+      if (tool === 'merge-pdf') jobType = 'MERGE_PDF';
+      else if (tool === 'compress-pdf') jobType = 'COMPRESS_PDF';
+      else if (tool === 'pdf-to-jpg') jobType = 'PDF_TO_JPG';
 
       const payload = {
         jobType,
@@ -373,78 +380,116 @@ export function ConverterWidget({ tool = 'unified' }: { tool?: string }) {
                   </div>
                 </div>
 
-                <label className="block text-sm text-slate-400">
-                  Page Size
-                  <select
-                    value={settings.pageSize}
-                    onChange={(e) => setSettings({ ...settings, pageSize: e.target.value })}
-                    className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
-                  >
-                    <option value="A4">A4</option>
-                    <option value="LETTER">Letter</option>
-                    <option value="FIT_TO_IMAGE">Fit to Image</option>
-                  </select>
-                </label>
-
-                <label className="block text-sm text-slate-400">
-                  Orientation
-                  <select
-                    value={settings.orientation}
-                    onChange={(e) => setSettings({ ...settings, orientation: e.target.value })}
-                    className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
-                  >
-                    <option value="PORTRAIT">Portrait</option>
-                    <option value="LANDSCAPE">Landscape</option>
-                    <option value="AUTO">Auto</option>
-                  </select>
-                </label>
-
-                <label className="block text-sm text-slate-400">
-                  Margins
-                  <select
-                    value={settings.margins}
-                    onChange={(e) => setSettings({ ...settings, margins: e.target.value })}
-                    className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
-                  >
-                    <option value="NONE">None</option>
-                    <option value="SMALL">Small</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="LARGE">Large</option>
-                  </select>
-                </label>
-
-                <div className="space-y-2">
-                  <p className="text-sm text-slate-400">Transparency Mode</p>
-                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
-                    <button
-                      onClick={() => setSettings({ ...settings, transparencyMode: 'flatten_white' })}
-                      className={clsx(
-                        "flex-1 py-1.5 text-xs font-medium rounded-md transition",
-                        settings.transparencyMode === 'flatten_white' ? "bg-slate-200 text-slate-950 shadow-md font-semibold" : "text-slate-400 hover:text-white"
-                      )}
-                    >
-                      White
-                    </button>
-                    <button
-                      onClick={() => setSettings({ ...settings, transparencyMode: 'flatten_black' })}
-                      className={clsx(
-                        "flex-1 py-1.5 text-xs font-medium rounded-md transition",
-                        settings.transparencyMode === 'flatten_black' ? "bg-slate-800 text-white shadow-md border border-slate-700 font-semibold" : "text-slate-400 hover:text-white"
-                      )}
-                    >
-                      Black
-                    </button>
-                    <button
-                      onClick={() => setSettings({ ...settings, transparencyMode: 'keep_transparent' })}
-                      className={clsx(
-                        "flex-1 py-1.5 text-xs font-medium rounded-md transition",
-                        settings.transparencyMode === 'keep_transparent' ? "bg-emerald-600 text-white shadow-md font-semibold" : "text-slate-400 hover:text-white"
-                      )}
-                    >
-                      Preserve
-                    </button>
+                {tool === 'compress-pdf' ? (
+                  <div className="space-y-4">
+                    <label className="block text-sm text-slate-400">
+                      Compression Level
+                      <select
+                        value={settings.compressionLevel}
+                        onChange={(e) => setSettings({ ...settings, compressionLevel: e.target.value })}
+                        className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                      >
+                        <option value="LOW">Low (Larger File, Highest Quality)</option>
+                        <option value="MEDIUM">Medium (Recommended)</option>
+                        <option value="HIGH">High (Smaller File, Lower Quality)</option>
+                        <option value="MAXIMUM">Maximum (Smallest File, Lowest Quality)</option>
+                      </select>
+                    </label>
+                    <p className="text-xs text-amber-500 mt-2 bg-amber-950/30 p-2 rounded border border-amber-900/50">
+                      <strong>Note:</strong> PDF compression requires our high-throughput cloud engines to analyze and downsample assets accurately.
+                    </p>
                   </div>
-                </div>
+                ) : tool === 'pdf-to-jpg' ? (
+                  <div className="space-y-4">
+                    <label className="block text-sm text-slate-400">
+                      Image Quality ({settings.imageQuality}%)
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        step="5"
+                        value={settings.imageQuality}
+                        onChange={(e) => setSettings({ ...settings, imageQuality: Number(e.target.value) })}
+                        className="mt-2 block w-full accent-emerald-500"
+                      />
+                    </label>
+                  </div>
+                ) : tool !== 'merge-pdf' ? (
+                  <>
+                    <label className="block text-sm text-slate-400">
+                      Page Size
+                      <select
+                        value={settings.pageSize}
+                        onChange={(e) => setSettings({ ...settings, pageSize: e.target.value })}
+                        className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                      >
+                        <option value="A4">A4</option>
+                        <option value="LETTER">Letter</option>
+                        <option value="FIT_TO_IMAGE">Fit to Image</option>
+                      </select>
+                    </label>
+
+                    <label className="block text-sm text-slate-400">
+                      Orientation
+                      <select
+                        value={settings.orientation}
+                        onChange={(e) => setSettings({ ...settings, orientation: e.target.value })}
+                        className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                      >
+                        <option value="PORTRAIT">Portrait</option>
+                        <option value="LANDSCAPE">Landscape</option>
+                        <option value="AUTO">Auto</option>
+                      </select>
+                    </label>
+
+                    <label className="block text-sm text-slate-400">
+                      Margins
+                      <select
+                        value={settings.margins}
+                        onChange={(e) => setSettings({ ...settings, margins: e.target.value })}
+                        className="mt-1 block w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                      >
+                        <option value="NONE">None</option>
+                        <option value="SMALL">Small</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LARGE">Large</option>
+                      </select>
+                    </label>
+
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-400">Transparency Mode</p>
+                      <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
+                        <button
+                          onClick={() => setSettings({ ...settings, transparencyMode: 'flatten_white' })}
+                          className={clsx(
+                            "flex-1 py-1.5 text-xs font-medium rounded-md transition",
+                            settings.transparencyMode === 'flatten_white' ? "bg-slate-200 text-slate-950 shadow-md font-semibold" : "text-slate-400 hover:text-white"
+                          )}
+                        >
+                          White
+                        </button>
+                        <button
+                          onClick={() => setSettings({ ...settings, transparencyMode: 'flatten_black' })}
+                          className={clsx(
+                            "flex-1 py-1.5 text-xs font-medium rounded-md transition",
+                            settings.transparencyMode === 'flatten_black' ? "bg-slate-800 text-white shadow-md border border-slate-700 font-semibold" : "text-slate-400 hover:text-white"
+                          )}
+                        >
+                          Black
+                        </button>
+                        <button
+                          onClick={() => setSettings({ ...settings, transparencyMode: 'keep_transparent' })}
+                          className={clsx(
+                            "flex-1 py-1.5 text-xs font-medium rounded-md transition",
+                            settings.transparencyMode === 'keep_transparent' ? "bg-emerald-600 text-white shadow-md font-semibold" : "text-slate-400 hover:text-white"
+                          )}
+                        >
+                          Preserve
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
 
