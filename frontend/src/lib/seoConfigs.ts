@@ -45,6 +45,20 @@ const seoConfigs: Record<string, SeoConfig> = {
     h1: 'Merge PDF',
     subtitle: 'Combine multiple PDFs into one document easily and securely.',
     toolSchemaName: 'Merge PDF Tool'
+  },
+  'compress-pdf': {
+    title: 'Compress PDF Online | Free & Secure | KrocPDF',
+    description: 'Reduce PDF file size without losing quality. Secure cloud processing.',
+    h1: 'Compress PDF',
+    subtitle: 'Reduce file sizes quickly with intelligent compression.',
+    toolSchemaName: 'Compress PDF Tool'
+  },
+  'pdf-to-jpg': {
+    title: 'Convert PDF to JPG Online | Free & Secure | KrocPDF',
+    description: 'Extract pages from your PDF documents as high-quality JPG images.',
+    h1: 'PDF to JPG',
+    subtitle: 'Convert PDF pages to JPG images securely and instantly.',
+    toolSchemaName: 'PDF to JPG Converter'
   }
 };
 
@@ -92,8 +106,7 @@ export const toolCards: ToolCardConfig[] = [
     iconId: 'minimize',
     accentFrom: '#0ea5e9',
     accentTo: '#0284c7',
-    comingSoon: true,
-    comingSoonBlurb: 'Intelligent PDF compression to shrink file sizes while preserving visual quality.',
+    comingSoon: false,
   },
   {
     slug: 'pdf-to-jpg',
@@ -102,8 +115,7 @@ export const toolCards: ToolCardConfig[] = [
     iconId: 'file-output',
     accentFrom: '#2dd4bf',
     accentTo: '#0f766e',
-    comingSoon: true,
-    comingSoonBlurb: 'Convert PDF pages back to high-resolution JPG images. Batch export supported.',
+    comingSoon: false,
   },
 ];
 

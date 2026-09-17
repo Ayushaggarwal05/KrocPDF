@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
 
@@ -46,4 +47,27 @@ func GeneratePDF(ctx context.Context, imagePaths []string, outPath string, pageS
 // MergePDFs takes a list of downloaded PDF file paths and merges them into a single PDF.
 func MergePDFs(ctx context.Context, pdfPaths []string, outPath string) error {
 	return api.MergeCreateFile(pdfPaths, outPath, false, nil)
+}
+
+// CompressPDF optimizes a PDF file based on the requested level
+func CompressPDF(ctx context.Context, inPath string, outPath string, level string) error {
+	conf := model.NewDefaultConfiguration()
+	
+	// Map UI levels to pdfcpu configuration heuristics
+	// LOW / MEDIUM: standard
+	// HIGH / MAXIMUM: aggressive stream optimization
+	switch level {
+	case "LOW", "MEDIUM":
+		conf.OptimizeResourceDicts = true
+		conf.OptimizeInlineImages = true
+	case "HIGH", "MAXIMUM":
+		conf.OptimizeResourceDicts = true
+		conf.OptimizeInlineImages = true
+		conf.OptimizeDuplicateContentStreams = true
+		conf.CreatePrintFile = true // strips non-essential elements like metadata
+	default:
+		conf.OptimizeResourceDicts = true
+	}
+
+	return api.OptimizeFile(inPath, outPath, conf)
 }
