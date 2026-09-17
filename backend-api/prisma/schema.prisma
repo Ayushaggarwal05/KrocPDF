@@ -19,6 +19,8 @@ enum JobStatus {
 enum JobType {
   IMAGE_TO_PDF
   MERGE_PDF
+  COMPRESS_PDF
+  PDF_TO_JPG
 }
 
 enum PageOrientation {
@@ -48,6 +50,12 @@ enum TransparencyMode {
   KEEP_TRANSPARENT
 }
 
+enum CompressionLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model ConversionJob {
   id              String          @id @default(uuid()) @db.Uuid
   status          JobStatus       @default(CREATED)
@@ -60,6 +68,8 @@ model ConversionJob {
   margins         PageMargin      @default(NONE)
   dpi             Int             @default(150)
   transparencyMode TransparencyMode @default(FLATTEN_WHITE) @map("transparency_mode")
+  compressionLevel CompressionLevel? @map("compression_level")
+  imageQuality    Int?            @map("image_quality")
   
   // Output artifact
   outputS3Key     String?         @map("output_s3_key")

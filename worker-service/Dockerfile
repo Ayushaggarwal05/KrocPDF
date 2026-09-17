@@ -2,7 +2,7 @@
 FROM golang:1.25-alpine AS builder
 
 # Install vips-dev and build tools for bimg (CGO)
-RUN apk add --no-cache build-base vips-dev pkgconfig
+RUN apk add --no-cache build-base vips-dev pkgconfig poppler-dev
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ FROM alpine:latest
 WORKDIR /app
 
 # Install CA certificates and vips (runtime dependencies for bimg)
-RUN apk --no-cache add ca-certificates vips
+RUN apk --no-cache add ca-certificates vips poppler
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/worker .

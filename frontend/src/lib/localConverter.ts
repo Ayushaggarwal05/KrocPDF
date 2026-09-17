@@ -214,3 +214,77 @@ export async function mergePdfsLocally(
   const blob = new Blob([mergedPdfBytes as unknown as BlobPart], { type: 'application/pdf' });
   return URL.createObjectURL(blob);
 }
+
+export async function convertPdfToJpgLocally(
+  file: File,
+  settings: LayoutSettings & { imageQuality?: number },
+  onProgress: (percent: number) => void
+): Promise<string> {
+  const pdfjsLib = await import('pdfjs-dist');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+  const { zipSync } = await import('fflate');
+
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const pdf = await loadingTask.promise;
+
+  const numPages = pdf.numPages;
+  if (numPages > 30) {
+    throw new Error('MEMORY_FALLBACK');
+  }
+
+  const quality = (settings.imageQuality || 80) / 100;
+  // Use DPI setting to determine scale (150 DPI is approx scale 2.08 since standard is 72)
+  const scale = (settings.dpi || 150) / 72;
+
+  const filesToZip: Record<string, Uint8Array> = {};
+
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Cannot get 2D context');
+
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const renderContext = {
+      canvasContext: ctx,
+      viewport: viewport,
+      background: 'rgba(255,255,255,1)'
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await page.render(renderContext as any).promise;
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    });
+
+    if (!blob) throw new Error('Canvas toBlob failed');
+    const imgBuffer = await blob.arrayBuffer();
+    filesToZip[`page_${pageNum}.jpg`] = new Uint8Array(imgBuffer);
+
+    // CRITICAL: Strict canvas clearing and event loop yielding
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = 0;
+    canvas.height = 0;
+    
+    // Release page resources
+    page.cleanup();
+
+    await new Promise(r => setTimeout(r, 10)); // Yield
+
+    onProgress(Math.round((pageNum / numPages) * 90)); // Leave 10% for zipping
+  }
+
+  // Zip the files entirely in memory using fflate
+  const zipped = zipSync(filesToZip, { level: 0 }); // level 0 because JPEGs are already compressed
+  onProgress(100);
+
+  const zipBlob = new Blob([zipped], { type: 'application/zip' });
+  return URL.createObjectURL(zipBlob);
+}

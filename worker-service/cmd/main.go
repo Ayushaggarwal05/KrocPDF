@@ -164,6 +164,83 @@ func main() {
 				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("PDF Merge failed: %v", err))
 				return err
 			}
+		} else if jobType == "COMPRESS_PDF" {
+			worker.PublishEvent(ctx, jobId, "PROCESSING", 30, "Downloading PDF for compression...")
+			if len(fileItems) == 0 {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, "No files provided for compression")
+				return fmt.Errorf("no files provided")
+			}
+			
+			stream, err := s3Client.DownloadStream(ctx, fileItems[0].Key)
+			if err != nil {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, "Failed to download PDF")
+				return err
+			}
+			localPath := filepath.Join(tempDir, "input.pdf")
+			inFile, err := os.Create(localPath)
+			if err != nil {
+				stream.Close()
+				return err
+			}
+			io.Copy(inFile, stream)
+			inFile.Close()
+			stream.Close()
+
+			compressionLevel, ok := payload["compression_level"].(string)
+			if !ok {
+				compressionLevel = "MEDIUM"
+			}
+
+			worker.PublishEvent(ctx, jobId, "PROCESSING", 50, "Compressing PDF...")
+			if err := converter.CompressPDF(ctx, localPath, outPath, compressionLevel); err != nil {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("PDF Compression failed: %v", err))
+				return err
+			}
+		} else if jobType == "PDF_TO_JPG" {
+			worker.PublishEvent(ctx, jobId, "PROCESSING", 10, "Downloading PDF...")
+			if len(fileItems) == 0 {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, "No files provided for extraction")
+				return fmt.Errorf("no files provided")
+			}
+			
+			stream, err := s3Client.DownloadStream(ctx, fileItems[0].Key)
+			if err != nil {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, "Failed to download PDF")
+				return err
+			}
+			localPath := filepath.Join(tempDir, "input.pdf")
+			inFile, err := os.Create(localPath)
+			if err != nil {
+				stream.Close()
+				return err
+			}
+			io.Copy(inFile, stream)
+			inFile.Close()
+			stream.Close()
+
+			qualityStr, ok := payload["image_quality"].(string)
+			quality := 80
+			if ok {
+				switch qualityStr {
+				case "LOW": quality = 40
+				case "MEDIUM": quality = 60
+				case "HIGH": quality = 80
+				case "MAXIMUM": quality = 100
+				}
+			}
+
+			outZipPath := filepath.Join(tempDir, "output.zip")
+			
+			err = converter.PdfToJpg(ctx, localPath, outZipPath, quality, func(pct int, msg string) {
+				worker.PublishEvent(ctx, jobId, "PROCESSING", pct, msg)
+			})
+			if err != nil {
+				worker.PublishEvent(ctx, jobId, "FAILED", 0, fmt.Sprintf("PDF to JPG conversion failed: %v", err))
+				return err
+			}
+			
+			// Change outPath to zip so the uploader picks it up
+			outPath = outZipPath
 		} else {
 			for i, item := range fileItems {
 				headerBytes, err := s3Client.GetHeaderBytes(ctx, item.Key, 65535)
@@ -232,19 +309,24 @@ func main() {
 			}
 		}
 
-		worker.PublishEvent(ctx, jobId, "PROCESSING", 85, "Uploading PDF...")
+		worker.PublishEvent(ctx, jobId, "PROCESSING", 85, "Uploading result...")
 		
-		pdfFile, err := os.Open(outPath)
+		finalFile, err := os.Open(outPath)
 		if err != nil {
-			worker.PublishEvent(ctx, jobId, "FAILED", 0, "Failed to read generated PDF")
+			worker.PublishEvent(ctx, jobId, "FAILED", 0, "Failed to read generated output file")
 			return err
 		}
-		defer pdfFile.Close()
+		defer finalFile.Close()
 
-		fileInfo, _ := pdfFile.Stat()
+		fileInfo, _ := finalFile.Stat()
 		
-		if err := s3Client.UploadStream(ctx, targetS3Key, pdfFile, fileInfo.Size(), "application/pdf"); err != nil {
-			worker.PublishEvent(ctx, jobId, "FAILED", 0, "Failed to upload final PDF")
+		contentType := "application/pdf"
+		if filepath.Ext(outPath) == ".zip" {
+			contentType = "application/zip"
+		}
+		
+		if err := s3Client.UploadStream(ctx, targetS3Key, finalFile, fileInfo.Size(), contentType); err != nil {
+			worker.PublishEvent(ctx, jobId, "FAILED", 0, "Failed to upload final result")
 			return err
 		}
 
