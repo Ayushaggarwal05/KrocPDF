@@ -60,9 +60,9 @@ func PdfToJpg(ctx context.Context, inPath string, outZipPath string, quality int
 
 		// Configure libvips to extract the specific page
 		options := bimg.Options{
-			Type:    bimg.JPEG,
+			Type:	bimg.JPEG,
 			Quality: quality,
-			Page:    i,
+			Page:	i,
 		}
 
 		// Process the page
