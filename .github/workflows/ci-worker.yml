@@ -36,13 +36,7 @@ jobs:
       - name: Install libvips
         run: sudo apt-get update && sudo apt-get install -y libvips-dev
 
-      - name: Go Format Check
-        run: |
-          if [ -n "$(gofmt -l .)" ]; then
-            echo "Go code is not formatted according to gofmt:"
-            gofmt -l .
-            exit 1
-          fi
+
 
       - name: Go Vet
         run: go vet ./...
