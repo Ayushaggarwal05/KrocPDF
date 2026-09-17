@@ -37,7 +37,20 @@ interface ScanPreviewModalProps {
   onApplyToAll: (options: FilterOptions) => void;
 }
 
-export function ScanPreviewModal({
+export function ScanPreviewModal(props: ScanPreviewModalProps) {
+  if (!props.isOpen || props.images.length === 0) {
+    return null;
+  }
+
+  return (
+    <ScanPreviewModalContent
+      key={`${props.initialActiveIndex}-${props.images.map(image => image.id).join(',')}`}
+      {...props}
+    />
+  );
+}
+
+function ScanPreviewModalContent({
   isOpen,
   onClose,
   images,
@@ -46,30 +59,41 @@ export function ScanPreviewModal({
   onApplyToPage,
   onApplyToAll,
 }: ScanPreviewModalProps) {
-  const [activeIndex, setActiveIndex] = useState<number>(initialActiveIndex);
-  const [options, setOptions] = useState<FilterOptions>(globalOptions);
-  const [originalDataUrl, setOriginalDataUrl] = useState<string | null>(null);
-  const [enhancedDataUrl, setEnhancedDataUrl] = useState<string | null>(null);
-  const [currentEnhancedBlob, setCurrentEnhancedBlob] = useState<Blob | null>(null);
-  const [sliderPosition, setSliderPosition] = useState<number>(50); // percentage 0 - 100
+  const initialIndex = Math.min(
+    initialActiveIndex,
+    Math.max(0, images.length - 1),
+  );
+
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-
-  // Sync activeIndex when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setActiveIndex(Math.min(initialActiveIndex, Math.max(0, images.length - 1)));
-    }
-  }, [isOpen, initialActiveIndex, images.length]);
+  const [originalDataUrl, setOriginalDataUrl] = useState<string>('');
+  const [enhancedDataUrl, setEnhancedDataUrl] = useState<string>('');
+  const [currentEnhancedBlob, setCurrentEnhancedBlob] = useState<Blob | null>(null);
+  const [sliderPosition, setSliderPosition] = useState<number>(50);
 
   const activeImage = images[activeIndex];
 
-  // Sync options with active image's custom options or globalOptions
-  useEffect(() => {
-    if (activeImage) {
-      setOptions(activeImage.filterOptions || globalOptions || DEFAULT_FILTER_OPTIONS);
-    }
-  }, [activeImage, globalOptions]);
+  const [options, setOptions] = useState<FilterOptions>(
+    images[initialIndex]?.filterOptions ||
+      globalOptions ||
+      DEFAULT_FILTER_OPTIONS,
+  );
+
+  const selectPage = useCallback(
+    (index: number) => {
+      const nextIndex = Math.max(0, Math.min(images.length - 1, index));
+      const nextImage = images[nextIndex];
+
+      setActiveIndex(nextIndex);
+      setOptions(
+        nextImage?.filterOptions ||
+          globalOptions ||
+          DEFAULT_FILTER_OPTIONS,
+      );
+    },
+    [images, globalOptions],
+  );
 
   // Load active image file into Data URL
   useEffect(() => {
@@ -175,16 +199,16 @@ export function ScanPreviewModal({
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' && activeIndex > 0) {
-        setActiveIndex(i => i - 1);
+        selectPage(activeIndex - 1);
       } else if (e.key === 'ArrowRight' && activeIndex < images.length - 1) {
-        setActiveIndex(i => i + 1);
+        selectPage(activeIndex + 1);
       } else if (e.key === 'Escape') {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, activeIndex, images.length, onClose]);
+  }, [isOpen, activeIndex, images.length, onClose, selectPage]);
 
   if (!isOpen || images.length === 0 || !activeImage) return null;
 
@@ -218,7 +242,7 @@ export function ScanPreviewModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setActiveIndex(i => Math.max(0, i - 1))}
+              onClick={() => selectPage(activeIndex - 1)}
               disabled={activeIndex === 0}
               className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-white transition"
               title="Previous Page (Left Arrow)"
@@ -227,7 +251,7 @@ export function ScanPreviewModal({
             </button>
             <button
               type="button"
-              onClick={() => setActiveIndex(i => Math.min(images.length - 1, i + 1))}
+              onClick={() => selectPage(activeIndex + 1)}
               disabled={activeIndex === images.length - 1}
               className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-white transition"
               title="Next Page (Right Arrow)"
@@ -308,7 +332,7 @@ export function ScanPreviewModal({
               <button
                 key={img.id}
                 type="button"
-                onClick={() => setActiveIndex(idx)}
+                onClick={() => selectPage(idx)}
                 className={clsx(
                   "relative w-12 h-14 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0",
                   activeIndex === idx
